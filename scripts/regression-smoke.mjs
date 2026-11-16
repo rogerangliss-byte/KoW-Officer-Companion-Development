@@ -291,7 +291,7 @@ try {
     await multiRows.nth(0).locator('[data-multi-officer] option:checked').innerText() === 'S8 Sara' &&
     await multiRows.nth(0).locator('[data-multi-status]').innerText() === 'Fully Funded' &&
     await multiRows.nth(1).locator('[data-multi-status]').innerText() === 'Shortfall');
-  await multiRows.nth(0).locator('[data-up]').click();
+  await multiRows.nth(1).locator('[data-up]').click();
   check('Multi-Officer Planner restores the original priority order',
     await multiRows.nth(0).locator('[data-multi-officer] option:checked').innerText() === 'S8 Po' &&
     await multiRows.nth(0).locator('[data-multi-status]').innerText() === 'Fully Funded');
