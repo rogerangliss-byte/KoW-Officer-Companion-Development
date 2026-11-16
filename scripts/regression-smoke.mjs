@@ -1268,6 +1268,39 @@ try {
     await mixedRatePo.locator('[data-multi-status]').innerText() === 'Shortfall' &&
     /27 ORV/.test(await page.locator('#multiPlannerSummary').innerText()),
     await page.locator('#multiPlannerSummary').innerText());
+
+  // Full mixed-inventory edge case: individual Officer Badges, ORV, Universal
+  // Badges, Legendary Badge Chests and Officer-specific Selection Chests coexist.
+  // The optimiser must not double-count any resource and must resolve equal
+  // whole-badge coverage by retaining Badge Chests as Universal Badges.
+  await page.evaluate(() => localStorage.setItem('kow_central_inventory_v1',
+    JSON.stringify({ officerBadges: { 'S7 Code': 1 } })));
+  await clearMixedPlannerRows();
+  const allResourcesCode = await addMixedPlannerRow('S7 Code', 2);
+  const allResourcesKatherine = await addMixedPlannerRow('Katherine', 1);
+  const allResourcesPo = await addMixedPlannerRow('S8 Po', 2);
+  await page.locator('#multiOrv').fill('346');
+  await page.locator('#multiUniversal').fill('1');
+  await page.locator('#multiChests').fill('1');
+  await page.locator('#multiSelectionChests').fill('1');
+  await page.locator('#multiChestMode').selectOption('optimise');
+  await page.waitForTimeout(150);
+  const allResourcesSummary = await page.locator('#multiPlannerSummary').innerText();
+  check('All five resource types are allocated once across a mixed Officer roster',
+    await allResourcesCode.locator('[data-multi-held]').innerText() === '1' &&
+    await allResourcesCode.locator('[data-multi-allocated]').innerText() === '1 / 1' &&
+    await allResourcesCode.locator('[data-multi-status]').innerText() === 'Fully Funded' &&
+    await allResourcesKatherine.locator('[data-multi-allocated]').innerText() === '1 / 1' &&
+    await allResourcesKatherine.locator('[data-multi-status]').innerText() === 'Fully Funded' &&
+    await allResourcesPo.locator('[data-multi-allocated]').innerText() === '2 / 2' &&
+    await allResourcesPo.locator('[data-multi-status]').innerText() === 'Fully Funded' &&
+    /5 of 5 required badge equivalents covered: 1 Individual Officer Badges held \\+ 4 shared badges allocated/.test(allResourcesSummary) &&
+    /0 ORV · 0 Universal Badges · 0 Selection Chests/.test(allResourcesSummary),
+    allResourcesSummary);
+  check('Optimiser resolves equal mixed-inventory coverage without double-counting Badge Chests',
+    /Optimised: use Badge Chests as Universal Badges/.test(allResourcesSummary),
+    allResourcesSummary);
+
 } catch (error) {
   let diagnostic = {};
   try {
