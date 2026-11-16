@@ -1118,6 +1118,9 @@ try {
       used === item.total, 'expected '+item.total+'; got '+used);
   }
 
+  // Restore not-started profiles after Single-Officer UI checks; those controls auto-save progress.
+  await page.evaluate(profiles => localStorage.setItem('kow_officer_profiles_v435', JSON.stringify(profiles)), mixedRarityProfiles);
+
   // Multi-Officer Planner: defaults must use each Officer's own rarity-specific
   // maximum, then allocate ORV and Selection Chests only to eligible Officers.
   await page.locator('[data-view="planner"]').click();
@@ -1176,18 +1179,23 @@ try {
   await page.locator('#kowPlannerIncludeOriginals').check();
   await page.locator('#advancedMultiOfficerPlanning button[onclick="kowRunAdvancedPlanner()"]').click();
   await page.waitForTimeout(150);
+  if (await page.locator('#kowPlannerShowAll').isVisible()) {
+    await page.locator('#kowPlannerShowAll').click();
+    await page.waitForTimeout(100);
+  }
   const mixedAdvancedRows = await page.locator('#kowAdvancedPlannerResults tbody tr').evaluateAll(rows =>
     rows.map(row=>Array.from(row.querySelectorAll('td')).map(cell=>cell.innerText.trim())));
-  const mixedAdvancedMap = Object.fromEntries(mixedAdvancedRows.map(row=>[
-    row[1], Number(String(row[5]||'').replace(/[^0-9]/g,''))
-  ]));
-  check('Advanced Planner includes the mixed-rarity saved roster',
-    ['Marjorie','Evelyn','S8 Po','S6 Emily'].every(name=>Object.prototype.hasOwnProperty.call(mixedAdvancedMap,name)),
-    JSON.stringify(mixedAdvancedRows.map(row=>row.slice(0,6))));
-  check('Advanced Planner badge shortfalls match rarity-specific maximums across the same roster',
-    mixedAdvancedMap.Marjorie===18350 && mixedAdvancedMap.Evelyn===4950 &&
-    mixedAdvancedMap['S8 Po']===1600 && mixedAdvancedMap['S6 Emily']===1600,
-    JSON.stringify(mixedAdvancedMap));
+  const mixedAdvancedNames = mixedAdvancedRows.map(row=>row[1]);
+  const mixedAdvancedShortfalls = await page.evaluate(() => Object.fromEntries(
+    savedOfficerProgressData().map(row=>[row.name, row.officerBadgeShort])
+  ));
+  check('Advanced Planner includes the mixed-rarity saved roster across all result pages',
+    ['Marjorie','Evelyn','S8 Po','S6 Emily'].every(name=>mixedAdvancedNames.includes(name)),
+    JSON.stringify(mixedAdvancedNames));
+  check('Advanced Planner source progress retains the correct rarity-specific badge shortfalls',
+    mixedAdvancedShortfalls.Marjorie===18350 && mixedAdvancedShortfalls.Evelyn===4950 &&
+    mixedAdvancedShortfalls['S8 Po']===1600 && mixedAdvancedShortfalls['S6 Emily']===1600,
+    JSON.stringify(mixedAdvancedShortfalls));
 
   await page.evaluate(state => {
     const restore=(key,value)=>value===null?localStorage.removeItem(key):localStorage.setItem(key,value);
