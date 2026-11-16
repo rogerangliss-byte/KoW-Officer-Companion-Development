@@ -53,6 +53,40 @@ try {
       `found ${skillRows} primary rows; fifth status: ${fifthStatus}`);
   } else check('Elite Marjorie is present', false);
 
+  // Verify rarity-specific skill totals, star gates, and fifth-skill unlock behaviour.
+  const epic = await page.locator('#officerSelect option').evaluateAll(opts => opts.find(o => /Evelyn/i.test(o.textContent))?.value);
+  if (epic !== undefined) {
+    await page.locator('#officerSelect').selectOption(epic);
+    check('Epic skill badge total is 440', /440 Officer Badges total/.test(await page.locator('#skillSequenceNotice').innerText()));
+    await page.locator('#unlocked').check();
+    await page.locator('#currentStar').selectOption('0');
+    await page.waitForTimeout(100);
+    check('Epic skill strand star gates begin at 0 stars', await page.locator('#skillGrid .skill-strand-row:not(.fifth-skill-status)').nth(0).locator('button.skill-lvl').first().isEnabled() &&
+      !(await page.locator('#skillGrid .skill-strand-row:not(.fifth-skill-status)').nth(1).locator('button.skill-lvl').first().isEnabled()));
+    await page.locator('#currentStar').selectOption('1');
+    await page.waitForTimeout(100);
+    check('Epic third skill remains gated below 2 stars', !(await page.locator('#skillGrid .skill-strand-row:not(.fifth-skill-status)').nth(2).locator('button.skill-lvl').first().isEnabled()));
+    await page.locator('#currentStar').selectOption('2');
+    await page.waitForTimeout(100);
+    check('Epic fourth skill remains gated below 3 stars', !(await page.locator('#skillGrid .skill-strand-row:not(.fifth-skill-status)').nth(3).locator('button.skill-lvl').first().isEnabled()));
+    await page.locator('#currentStar').selectOption('3');
+    await page.waitForTimeout(100);
+    check('Epic fourth skill unlocks at 3 stars', await page.locator('#skillGrid .skill-strand-row:not(.fifth-skill-status)').nth(3).locator('button.skill-lvl').first().isEnabled());
+    check('Epic fifth skill stays locked before all four skills are complete', /Fifth Skill: LOCKED/.test(await page.locator('#skillGrid .fifth-skill-status').innerText()));
+    for (let strand = 0; strand < 4; strand++) {
+      await page.locator('#skillGrid .skill-strand-row:not(.fifth-skill-status)').nth(strand).locator('button.skill-lvl').nth(9).click();
+    }
+    check('Epic fifth skill unlocks after all four primary skills reach level 10', /Fifth Skill: UNLOCKED/.test(await page.locator('#skillGrid .fifth-skill-status').innerText()));
+  } else check('Epic Evelyn is present', false);
+
+  const legendary = await page.locator('#officerSelect option').evaluateAll(opts => opts.find(o => /S8 Po/i.test(o.textContent))?.value);
+  if (legendary !== undefined) {
+    await page.locator('#officerSelect').selectOption(legendary);
+    check('Legendary skill badge total is 690', /690 Officer Badges total/.test(await page.locator('#skillSequenceNotice').innerText()));
+  } else check('Legendary S8 Po is present', false);
+  await page.locator('#officerSelect').selectOption(marjorie);
+  check('Elite skill badge total is 340', /340 Officer Badges total/.test(await page.locator('#skillSequenceNotice').innerText()));
+
   // Independent Officer profiles and shared-resource persistence.
   page.on('dialog', dialog => dialog.accept());
   await page.locator('[data-view="officer"]').click();
