@@ -47,6 +47,7 @@ try {
     const value = await page.locator('#officerSelect option').evaluateAll(opts => opts.find(o => new RegExp(name, 'i').test(o.textContent))?.value);
     if (value === undefined) throw new Error('Officer not found: ' + name);
     await page.locator('#officerSelect').selectOption(value);
+    await page.waitForFunction(expected => document.querySelector('#officerSelect')?.value === expected, value);
     await page.locator('[data-view="development"]').click();
     return value;
   };
@@ -54,9 +55,9 @@ try {
   // Confirm Elite does not expose a fifth skill.
   const marjorie = await selectOfficerForSkills('Marjorie');
   if (marjorie !== undefined) {
-    const skillText = await page.locator('#skillGrid').innerText();
+    await page.waitForFunction(() => /Fifth Skill: Not available for Elite Officers/i.test(document.querySelector('#skillGrid .fifth-skill-status')?.textContent || ''));
     const skillRows = await page.locator('#skillGrid .skill-strand-row:not(.fifth-skill-status)').count();
-    const fifthStatus = await page.locator('#skillGrid .fifth-skill-status').innerText();
+    const fifthStatus = await page.locator('#skillGrid .fifth-skill-status').textContent();
     const fifthButtons = await page.locator('#skillGrid .fifth-skill-status button').count();
     check('Elite Marjorie has four primary strands and no fifth skill controls', skillRows === 4 && fifthButtons === 0 && /Fifth Skill: Not available for Elite Officers/i.test(fifthStatus),
       `found ${skillRows} primary rows; fifth status: ${fifthStatus}`);
@@ -66,14 +67,15 @@ try {
   const epic = await selectOfficerForSkills('Evelyn');
   if (epic !== undefined) {
     await page.locator('#skillSequenceNotice').waitFor({ state: 'visible' });
-    await page.waitForFunction(() => /440 Officer Badges total/.test(document.querySelector('#skillSequenceNotice')?.innerText || ''));
-    check('Epic skill badge total is 440', /440 Officer Badges total/.test(await page.locator('#skillSequenceNotice').innerText()));
+    await page.waitForFunction(() => /Epic Skill Badge progression:\s*440 Officer Badges total/i.test(document.querySelector('#skillSequenceNotice')?.textContent || ''));
+    const epicNotice = await page.locator('#skillSequenceNotice').textContent();
+    check('Epic skill badge total is 440', /Epic Skill Badge progression:\s*440 Officer Badges total/i.test(epicNotice), epicNotice);
     await page.locator('label.check').filter({ hasText: 'Officer unlocked (10 badges)' }).click();
     const setEpicStars = async value => {
-      await page.locator('[data-view="stars"]').click();
+      await page.locator('[data-view="officer"]').click();
       await page.locator('#currentStar').selectOption(String(value));
       await page.locator('[data-view="development"]').click();
-      await page.waitForTimeout(100);
+      await page.waitForFunction(expected => Number(document.querySelector('#currentStar')?.value) === expected, value);
     };
     await setEpicStars(0);
     check('Epic skill strand star gates begin at 0 stars', await page.locator('#skillGrid .skill-strand-row:not(.fifth-skill-status)').nth(0).locator('button.skill-lvl').first().isEnabled() &&
