@@ -310,6 +310,58 @@ try {
     !/QA Multi Officer Plan/.test(await page.locator('#multiSavedPlans').innerText()) &&
     !(await page.evaluate(() => !!JSON.parse(localStorage.getItem('kow_multi_plans_v430') || '{}')['QA Multi Officer Plan'])));
 
+  // Multi-Officer Planner edge cases: exact thresholds, held badges and chest strategies.
+  const resetMultiCase = async (officerName, needed, resources = {}) => {
+    while (await page.locator('#multiPlannerRows tr').count()) {
+      await page.locator('#multiPlannerRows tr').first().locator('[data-remove]').click();
+    }
+    await page.locator('#multiAddOfficer').click();
+    const row = page.locator('#multiPlannerRows tr').first();
+    await row.locator('[data-multi-officer]').selectOption({ label: officerName });
+    await row.locator('[data-multi-needed]').fill(String(needed));
+    await page.locator('#multiOrv').fill(String(resources.orv ?? 0));
+    await page.locator('#multiUniversal').fill(String(resources.universal ?? 0));
+    await page.locator('#multiChests').fill(String(resources.chests ?? 0));
+    await page.locator('#multiSelectionChests').fill(String(resources.selection ?? 0));
+    await page.locator('#multiChestMode').selectOption(resources.mode ?? 'optimise');
+    await page.waitForTimeout(100);
+    return row;
+  };
+  await page.evaluate(() => localStorage.removeItem('kow_central_inventory_v1'));
+  let edgeRow = await resetMultiCase('S8 Po', 1, { orv: 720, mode: 'orv' });
+  check('Multi-Officer Planner funds exactly one badge at the 720 ORV threshold',
+    await edgeRow.locator('[data-multi-status]').innerText() === 'Fully Funded' &&
+    await edgeRow.locator('[data-multi-allocated]').innerText() === '1 / 1');
+  edgeRow = await resetMultiCase('S8 Po', 1, { orv: 719, mode: 'orv' });
+  check('Multi-Officer Planner does not round 719 ORV up to a badge',
+    await edgeRow.locator('[data-multi-status]').innerText() === 'Shortfall' &&
+    await edgeRow.locator('[data-multi-allocated]').innerText() === '0 / 1');
+  await page.evaluate(() => localStorage.setItem('kow_central_inventory_v1',
+    JSON.stringify({ officerBadges: { 'S8 Po': 1 } })));
+  edgeRow = await resetMultiCase('S8 Po', 2, { orv: 720, mode: 'orv' });
+  check('Multi-Officer Planner applies individual held badges before shared ORV',
+    await edgeRow.locator('[data-multi-held]').innerText() === '1' &&
+    await edgeRow.locator('[data-multi-allocated]').innerText() === '1 / 1' &&
+    await edgeRow.locator('[data-multi-status]').innerText() === 'Fully Funded');
+  await page.evaluate(() => localStorage.removeItem('kow_central_inventory_v1'));
+  edgeRow = await resetMultiCase('S8 Po', 1, { universal: 1, mode: 'badge' });
+  check('Multi-Officer Planner uses a Universal Badge when no ORV is available',
+    await edgeRow.locator('[data-multi-allocated]').innerText() === '1 / 1' &&
+    await edgeRow.locator('[data-multi-status]').innerText() === 'Fully Funded');
+  edgeRow = await resetMultiCase('S8 Po', 1, { chests: 1, mode: 'orv' });
+  check('Multi-Officer Planner converts one Legendary Badge Chest at the current ORV rate',
+    await edgeRow.locator('[data-multi-allocated]').innerText() === '1 / 1' &&
+    await edgeRow.locator('[data-multi-status]').innerText() === 'Fully Funded');
+  edgeRow = await resetMultiCase('S8 Po', 1, { chests: 1, mode: 'optimise' });
+  check('Multi-Officer Planner keeps Badge Chests as Universal Badges when coverage ties',
+    /Optimised: use Badge Chests as Universal Badges/.test(await page.locator('#multiPlannerSummary').innerText()) &&
+    await edgeRow.locator('[data-multi-status]').innerText() === 'Fully Funded');
+  edgeRow = await resetMultiCase('Katherine', 1, { selection: 1, mode: 'badge' });
+  check('Multi-Officer Planner applies an eligible Officer Selection Chest to its Officer',
+    await edgeRow.locator('[data-multi-allocated]').innerText() === '1 / 1' &&
+    await edgeRow.locator('[data-multi-status]').innerText() === 'Fully Funded');
+  await page.evaluate(() => localStorage.removeItem('kow_central_inventory_v1'));
+
   // Advanced Multi-Officer Planning: saved progress and future release placeholders.
   // The season selector must follow the actual officer dataset, including newly added seasons.
   const seasonOptions = await page.locator('#kowPlannerSeasonFilter option').allTextContents();
