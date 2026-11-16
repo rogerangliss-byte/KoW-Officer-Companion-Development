@@ -613,11 +613,93 @@ try {
   check('Advanced Planner reports shared Universal Badge inventory separately from ORV',
     /ORV 0/.test(await page.locator('#kowAdvancedPlannerResults').innerText()) &&
     /Universal Badges 1/.test(await page.locator('#kowAdvancedPlannerResults').innerText()));
-  await page.evaluate(previous => {
+  // Advanced Planner persistence and recovery: saved Officer profiles and shared
+  // resource snapshots must survive a full reload and remain isolated from session changes.
+  const plannerInventoryFixture = await page.evaluate(() => ({
+    central: localStorage.getItem('kow_central_inventory_v1'),
+    global: localStorage.getItem('kow_global_resources_v435')
+  }));
+  await page.evaluate(() => {
+    const central = {
+      invOrv: 720, invSrv: 360, invUniversalLegendary: 0,
+      invLegendaryBadgeChests: 0, invLegendarySelectionChests: 0,
+      invLegStar1: 0, invLegStar2: 0, invLegStar3: 0,
+      savedAt: '2026-11-16T00:00:00.000Z'
+    };
+    const global = {
+      orvHeld: '720', srvHeld: '360', universalBadgeHeld: '0',
+      legendaryBadgeChestHeld: '0', legendarySelectionChestHeld: '0',
+      legendaryBadgeChestMode: 'badge', xp: {},
+      savedAt: '2026-11-16T00:00:00.000Z'
+    };
+    localStorage.setItem('kow_central_inventory_v1', JSON.stringify(central));
+    localStorage.setItem('kow_global_resources_v435', JSON.stringify(global));
+  });
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await page.waitForFunction(() => document.querySelectorAll('#officerSelect option').length === 68);
+  await page.locator('[data-view="planner"]').click();
+  await page.locator('#kowPlannerSession').selectOption('saved');
+  await page.locator('#kowPlannerSeasonFilter').selectOption('S8');
+  await page.locator('#kowFutureOfficerType').selectOption('auto');
+  await page.locator('#kowPlannerIncludeNotStarted').uncheck();
+  await page.locator('#kowPlannerIncludeOriginals').uncheck();
+  await page.locator('#advancedMultiOfficerPlanning button[onclick="kowRunAdvancedPlanner()"]').click();
+  await page.waitForTimeout(150);
+  plannerRows = page.locator('#kowAdvancedPlannerResults tbody tr');
+  plannerCells = await plannerRows.evaluateAll(rows => rows.map(row =>
+    Array.from(row.querySelectorAll('td')).map(cell => cell.innerText.trim())));
+  check('Advanced Planner restores both saved S8 Officer profiles after reload',
+    plannerCells.length === 2 && plannerCells[0]?.[1] === 'S8 Po' && plannerCells[1]?.[1] === 'S8 Sara',
+    JSON.stringify(plannerCells));
+  check('Advanced Planner restores the saved 720 ORV inventory snapshot after reload',
+    /Inventory detected: ORV 720/.test(await page.locator('#kowAdvancedPlannerResults').innerText()),
+    (await page.locator('#kowAdvancedPlannerResults').innerText()).slice(-220));
+  check('Advanced Planner recalculates the ORV recommendation from restored inventory',
+    plannerCells.length === 2 && plannerCells.every(row => row[4].includes('then ORV where eligible')),
+    JSON.stringify(plannerCells.map(row => row[4])));
+  await page.locator('#kowPlannerSession').selectOption('january');
+  await page.locator('#advancedMultiOfficerPlanning button[onclick="kowRunAdvancedPlanner()"]').click();
+  check('Changing to a future session does not erase saved Officer progress',
+    JSON.parse(await page.evaluate(() => localStorage.getItem('kow_officer_profiles_v435') || '{}'))['S8|S8 Po']?.skills?.filter(Boolean).length === 20);
+  await page.locator('#kowPlannerSession').selectOption('saved');
+  await page.locator('#advancedMultiOfficerPlanning button[onclick="kowRunAdvancedPlanner()"]').click();
+  check('Returning to Saved Officers restores the same recommendation order',
+    (await page.locator('#kowAdvancedPlannerResults tbody tr td:nth-child(2)').allInnerTexts()).join('|') === 'S8 Po|S8 Sara');
+  await page.evaluate(() => {
     const key = 'kow_officer_profiles_v435';
-    if (previous === null) localStorage.removeItem(key);
-    else localStorage.setItem(key, previous);
-  }, plannerFixture);
+    const profiles = JSON.parse(localStorage.getItem(key) || '{}');
+    profiles['S8|S8 Sara'] = {
+      unlocked: true, skills: Array(36).fill(true), training: 180,
+      currentStar: 5, currentLevel: 70, badgeHeld: 0, savedAt: '2026-11-16T00:01:00.000Z'
+    };
+    localStorage.setItem(key, JSON.stringify(profiles));
+  });
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await page.waitForFunction(() => document.querySelectorAll('#officerSelect option').length === 68);
+  await page.locator('[data-view="planner"]').click();
+  await page.locator('#kowPlannerSession').selectOption('saved');
+  await page.locator('#kowPlannerSeasonFilter').selectOption('S8');
+  await page.locator('#kowPlannerIncludeNotStarted').uncheck();
+  await page.locator('#kowPlannerIncludeOriginals').uncheck();
+  await page.locator('#advancedMultiOfficerPlanning button[onclick="kowRunAdvancedPlanner()"]').click();
+  const afterProfileChange = await page.locator('#kowAdvancedPlannerResults tbody tr td:nth-child(2)').allInnerTexts();
+  check('Advanced Planner excludes an Officer newly saved as MAXED after reload',
+    afterProfileChange.length === 1 && afterProfileChange[0] === 'S8 Po',
+    JSON.stringify(afterProfileChange));
+  await page.evaluate(({ profiles, inventory }) => {
+    const profileKey = 'kow_officer_profiles_v435';
+    if (profiles === null) localStorage.removeItem(profileKey);
+    else localStorage.setItem(profileKey, profiles);
+    const restore = (key, value) => value === null ? localStorage.removeItem(key) : localStorage.setItem(key, value);
+    restore('kow_central_inventory_v1', inventory.central);
+    restore('kow_global_resources_v435', inventory.global);
+  }, { profiles: plannerFixture, inventory: plannerInventoryFixture });
+  await page.locator('#kowPlannerSession').selectOption('saved');
+  await page.locator('#advancedMultiOfficerPlanning button[onclick="kowRunAdvancedPlanner()"]').click();
+  await page.waitForTimeout(100);
+  check('Advanced Planner test fixtures are restored after the persistence audit',
+    JSON.parse(await page.evaluate(() => localStorage.getItem('kow_officer_profiles_v435') || '{}'))['S8|S8 Sara']?.skills?.filter(Boolean).length === 8);
+
   await page.locator('#kowPlannerSession').selectOption('january');
   await page.locator('#advancedMultiOfficerPlanning button[onclick="kowRunAdvancedPlanner()"]').click();
   check('Advanced Planner projects January as S8 Infantry',
