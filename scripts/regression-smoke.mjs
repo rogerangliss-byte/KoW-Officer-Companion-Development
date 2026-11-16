@@ -55,22 +55,23 @@ try {
 
   // Independent Officer profiles and shared-resource persistence.
   page.on('dialog', dialog => dialog.accept());
+  await page.locator('[data-view="development"]').click();
+  await page.locator('#orvHeld').fill('4321');
   await page.locator('[data-view="officer"]').click();
   await page.locator('#officerSelect').selectOption({ label: 'S8 Po' });
-  await page.locator('#currentLevel').fill('2');
-  await page.locator('#currentStar').selectOption('1');
-  await page.locator('#orvHeld').fill('4321');
-  await page.locator('#orvHeld').dispatchEvent('input');
-  await page.locator('#orvHeld').dispatchEvent('change');
-  await page.locator('#saveOfficerProfile').click();
+  await page.locator('#quickProgressBtn').click();
+  await page.locator('#quickOfficerLevel').fill('2');
+  await page.locator('#quickStarLevel').selectOption('1');
+  await page.locator('#quickProgressSave').click();
   await page.waitForTimeout(200);
   check('First Officer profile saves', /Saved/.test(await page.locator('#profileSavedStatus').innerText()));
   await page.locator('#officerSelect').selectOption({ label: 'S8 Sara' });
   check('Shared ORV inventory survives Officer switch', await page.locator('#orvHeld').inputValue() === '4321',
     'expected 4321 ORV after switching, got ' + await page.locator('#orvHeld').inputValue());
-  await page.locator('#currentLevel').fill('3');
-  await page.locator('#currentStar').selectOption('2');
-  await page.locator('#saveOfficerProfile').click();
+  await page.locator('#quickProgressBtn').click();
+  await page.locator('#quickOfficerLevel').fill('3');
+  await page.locator('#quickStarLevel').selectOption('2');
+  await page.locator('#quickProgressSave').click();
   await page.waitForTimeout(200);
   await page.locator('#officerSelect').selectOption({ label: 'S8 Po' });
   check('First Officer profile restores independently', await page.locator('#currentLevel').inputValue() === '2' && await page.locator('#currentStar').inputValue() === '1');
@@ -98,7 +99,7 @@ try {
   check('MAX leaves shared ORV inventory untouched', await page.locator('#orvHeld').inputValue() === '4321');
   await page.locator('#resetOfficerProfile').click();
   await page.waitForTimeout(150);
-  check('Reset clears only the selected Officer progress', await page.locator('#currentLevel').inputValue() === '1' && await page.locator('#currentStar').inputValue() === '0' && /Not saved yet/i.test(await page.locator('#profileSavedStatus').innerText()));
+  check('Reset clears only the selected Officer progress', await page.locator('#currentLevel').inputValue() === '0' && await page.locator('#currentStar').inputValue() === '0' && /Not saved yet/i.test(await page.locator('#profileSavedStatus').innerText()));
   check('Reset preserves shared ORV inventory', await page.locator('#orvHeld').inputValue() === '4321');
   await page.locator('#officerSelect').selectOption({ label: 'S8 Po' });
   check('Reset does not damage another Officer profile', await page.locator('#currentLevel').inputValue() === '2' && await page.locator('#currentStar').inputValue() === '1');
