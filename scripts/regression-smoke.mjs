@@ -285,6 +285,17 @@ try {
     /1 \/ 1/.test(await multiRows.nth(0).locator('[data-multi-allocated]').innerText()),
     await multiRows.nth(0).locator('[data-multi-allocated]').innerText());
 
+  // Priority controls must change allocation order, not just row numbering.
+  await multiRows.nth(0).locator('[data-down]').click();
+  check('Multi-Officer Planner moves the selected Officer down one priority', 
+    await multiRows.nth(0).locator('[data-multi-officer] option:checked').innerText() === 'S8 Sara' &&
+    await multiRows.nth(0).locator('[data-multi-status]').innerText() === 'Fully Funded' &&
+    await multiRows.nth(1).locator('[data-multi-status]').innerText() === 'Shortfall');
+  await multiRows.nth(0).locator('[data-up]').click();
+  check('Multi-Officer Planner restores the original priority order',
+    await multiRows.nth(0).locator('[data-multi-officer] option:checked').innerText() === 'S8 Po' &&
+    await multiRows.nth(0).locator('[data-multi-status]').innerText() === 'Fully Funded');
+
   await page.locator('#multiPlanName').fill('QA Multi Officer Plan');
   await page.locator('#multiSavePlan').click();
   check('Multi-Officer Planner saves named plan',
@@ -300,6 +311,14 @@ try {
     !(await page.evaluate(() => !!JSON.parse(localStorage.getItem('kow_multi_plans_v430') || '{}')['QA Multi Officer Plan'])));
 
   // Advanced Multi-Officer Planning: saved progress and future release placeholders.
+  // The season selector must follow the actual officer dataset, including newly added seasons.
+  const seasonOptions = await page.locator('#kowPlannerSeasonFilter option').allTextContents();
+  check('Advanced Planner season filter includes current S8 data',
+    seasonOptions.some(v => v.trim() === 'S8'),
+    'options=' + seasonOptions.join(', '));
+  check('Advanced Planner season filter retains Original as a separate category',
+    seasonOptions.some(v => v.trim() === 'Original'),
+    'options=' + seasonOptions.join(', '));
   await page.locator('#kowPlannerSession').selectOption('saved');
   await page.locator('#kowPlannerSeasonFilter').selectOption('all');
   await page.locator('#kowFutureOfficerType').selectOption('auto');
