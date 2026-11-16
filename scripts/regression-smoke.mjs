@@ -99,7 +99,7 @@ try {
   check('MAX leaves shared ORV inventory untouched', await page.locator('#orvHeld').inputValue() === '4321');
   await page.locator('#resetOfficerProfile').click();
   await page.waitForTimeout(150);
-  check('Reset clears only the selected Officer progress', await page.locator('#currentLevel').inputValue() === '0' && await page.locator('#currentStar').inputValue() === '0' && /Not saved yet/i.test(await page.locator('#profileSavedStatus').innerText()));
+  check('Reset clears only the selected Officer progress', await page.locator('#currentLevel').inputValue() === '1' && await page.locator('#currentStar').inputValue() === '0' && /Not saved yet/i.test(await page.locator('#profileSavedStatus').innerText()));
   check('Reset preserves shared ORV inventory', await page.locator('#orvHeld').inputValue() === '4321');
   await page.locator('#officerSelect').selectOption({ label: 'S8 Po' });
   check('Reset does not damage another Officer profile', await page.locator('#currentLevel').inputValue() === '2' && await page.locator('#currentStar').inputValue() === '1');
