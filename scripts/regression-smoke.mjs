@@ -58,7 +58,27 @@ try {
         });
       });
     });
-    await page.locator('#officerSelect').selectOption(value);
+    const officerSelect = page.locator('#officerSelect');
+    const optionState = await officerSelect.locator('option').evaluateAll(opts => {
+      const match = opts.find(o => o.value === value);
+      return {
+        selectDisabled: document.querySelector('#officerSelect')?.disabled ?? null,
+        selectedBefore: document.querySelector('#officerSelect')?.value ?? null,
+        targetFound: !!match,
+        targetDisabled: match?.disabled ?? null,
+        targetText: match?.textContent?.trim() ?? null
+      };
+    });
+    const selectionResult = await officerSelect.selectOption({ label: name });
+    const selectionAfter = await officerSelect.inputValue();
+    console.log('Officer selection diagnostic:', JSON.stringify({
+      officer: name, expectedValue: value, selectionResult,
+      selectionAfter, optionState
+    }));
+    if (selectionAfter !== value) {
+      throw new Error('Playwright selectOption did not select ' + name +
+        '; expected value ' + value + ', got ' + selectionAfter);
+    }
     await page.waitForFunction(expected => document.querySelector('#officerSelect')?.value === expected, value);
     await page.waitForFunction(expected => {
       const selected = document.querySelector('#officerSelect option:checked')?.textContent?.trim();
