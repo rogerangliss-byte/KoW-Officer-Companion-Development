@@ -50,10 +50,11 @@ try {
     await page.waitForFunction(expected => document.querySelector('#officerSelect')?.value === expected, value);
     await page.waitForFunction(expected => {
       const selected = document.querySelector('#officerSelect option:checked')?.textContent?.trim();
-      const dash = document.querySelector('#dashOfficer')?.textContent?.trim();
       const rarity = document.querySelector('#officerRarityValue')?.textContent?.trim();
-      return !!selected && (!dash || dash === selected) && rarity === expected;
-    }, expectedRarity);
+      // The select uses the season-qualified display name; the dashboard uses the raw officer name.
+      // Do not compare those two different presentation formats.
+      return !!selected && rarity === expected;
+    }, expectedRarity, { timeout: 10000 });
     await page.locator('[data-view="development"]').click();
     await page.waitForFunction(expected => {
       const grid = document.querySelector('#skillGrid');
