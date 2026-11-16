@@ -77,6 +77,32 @@ try {
   await page.locator('#officerSelect').selectOption({ label: 'S8 Sara' });
   check('Second Officer profile restores independently', await page.locator('#currentLevel').inputValue() === '3' && await page.locator('#currentStar').inputValue() === '2');
 
+  // Reload must retain both profiles and shared inventory.
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await page.waitForFunction(() => document.querySelectorAll('#officerSelect option').length === 68);
+  await page.waitForTimeout(300);
+  check('Selected Officer is restored after page reload', await page.locator('#officerSelect').locator('option:checked').textContent().then(v => v.trim()) === 'S8 Sara');
+  check('Second Officer progress survives page reload', await page.locator('#currentLevel').inputValue() === '3' && await page.locator('#currentStar').inputValue() === '2');
+  check('Shared ORV inventory survives page reload', await page.locator('#orvHeld').inputValue() === '4321');
+
+  // MAX and Reset must affect only the selected Officer profile, never shared inventory.
+  await page.locator('[data-view="officer"]').click();
+  await page.locator('#maxOfficerProfile').click();
+  await page.waitForTimeout(150);
+  check('MAX sets level 70 and five stars', await page.locator('#currentLevel').inputValue() === '70' && await page.locator('#currentStar').inputValue() === '5');
+  check('MAX unlocks Officer and completes four primary skills',
+    await page.locator('#unlocked').isChecked() &&
+    await page.locator('#skillGrid .skill-strand-row:not(.fifth-skill-status)').count() === 4 &&
+    await page.locator('#skillGrid .skill-strand-row:not(.fifth-skill-status) button.skill-step.completed').count() === 36);
+  check('MAX sets training to 180', await page.locator('#trainingExact').inputValue() === '180');
+  check('MAX leaves shared ORV inventory untouched', await page.locator('#orvHeld').inputValue() === '4321');
+  await page.locator('#resetOfficerProfile').click();
+  await page.waitForTimeout(150);
+  check('Reset clears only the selected Officer progress', await page.locator('#currentLevel').inputValue() === '1' && await page.locator('#currentStar').inputValue() === '0' && /Not saved yet/i.test(await page.locator('#profileSavedStatus').innerText()));
+  check('Reset preserves shared ORV inventory', await page.locator('#orvHeld').inputValue() === '4321');
+  await page.locator('#officerSelect').selectOption({ label: 'S8 Po' });
+  check('Reset does not damage another Officer profile', await page.locator('#currentLevel').inputValue() === '2' && await page.locator('#currentStar').inputValue() === '1');
+
   await page.locator('[data-view="progress"]').click();
   await page.waitForTimeout(150);
   check('Saved Officer progress overview lists both profiles',
