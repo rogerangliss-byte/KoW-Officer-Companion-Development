@@ -613,6 +613,39 @@ try {
     ' | browser errors: ' + pageErrors.join(' || '));
 } finally {
   console.log('Application regression smoke test');
+  // Partial-funding audit: retain unusable ORV remainders and report partial coverage accurately.
+  edgeRow = await resetMultiCase('S8 Po', 2, { orv: 1439, mode: 'orv' });
+  check('Partial funding allocates only whole badges and retains 719 ORV',
+    await edgeRow.locator('[data-multi-allocated]').innerText() === '1 / 2' &&
+    await edgeRow.locator('[data-multi-status]').innerText() === 'Partially Funded' &&
+    /1 partially funded/.test(await page.locator('#multiPlannerSummary').innerText()) &&
+    /719 ORV/.test(await page.locator('#multiPlannerSummary').innerText()),
+    await page.locator('#multiPlannerSummary').innerText());
+
+  edgeRow = await resetMultiCase('S8 Po', 2, { orv: 719, universal: 1, mode: 'badge' });
+  check('Universal Badge covers one badge while sub-threshold ORV remains untouched',
+    await edgeRow.locator('[data-multi-allocated]').innerText() === '1 / 2' &&
+    await edgeRow.locator('[data-multi-status]').innerText() === 'Partially Funded' &&
+    /719 ORV · 0 Universal Badges/.test(await page.locator('#multiPlannerSummary').innerText()),
+    await page.locator('#multiPlannerSummary').innerText());
+
+  await clearMixedPlannerRows();
+  const mixedRateCode = await addMixedPlannerRow('S7 Code', 2);
+  const mixedRatePo = await addMixedPlannerRow('S8 Po', 1);
+  await page.locator('#multiOrv').fill('719');
+  await page.locator('#multiUniversal').fill('0');
+  await page.locator('#multiChests').fill('0');
+  await page.locator('#multiSelectionChests').fill('0');
+  await page.locator('#multiChestMode').selectOption('orv');
+  await page.waitForTimeout(100);
+  check('Lower-cost Officer consumes only whole affordable badges and preserves ORV remainder for next priority',
+    await mixedRateCode.locator('[data-multi-allocated]').innerText() === '2 / 2' &&
+    await mixedRateCode.locator('[data-multi-status]').innerText() === 'Fully Funded' &&
+    await mixedRatePo.locator('[data-multi-allocated]').innerText() === '0 / 1' &&
+    await mixedRatePo.locator('[data-multi-status]').innerText() === 'Shortfall' &&
+    /27 ORV/.test(await page.locator('#multiPlannerSummary').innerText()),
+    await page.locator('#multiPlannerSummary').innerText());
+
   console.log('=================================');
   for (const name of passes) console.log('PASS  ' + name);
   for (const name of failures) console.log('FAIL  ' + name);
