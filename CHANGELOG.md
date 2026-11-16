@@ -7,7 +7,7 @@
 - Seasonal default dataset: 46 Officers, maintained separately from the full 68-Officer database.
 - Confirmed S8 Po and S8 Sara costs: 720 ORV / 360 SRV.
 - Retains the approved rarity-specific badge totals and incremental skill progression rules.
-- No application version increment is made by the validation work recorded below.
+- The Officer Database editor enhancement is Development-only; no application version increment is made by the work recorded below.
 
 ### Enhancement Development validation — 16 November 2026 (not a production release)
 - Hardened global resource capture and restore against unavailable form controls.
@@ -15,6 +15,14 @@
 - Final browser regression: 161 passed, 0 failed (commit `48ec2edcf289c6d55a082f2147f846d045942031`).
 - Officer-data validation: 2,036 checks passed, 0 errors (run `43884997100`).
 - These checks validate the isolated Enhancement Development environment only. They do not authorize or constitute promotion to either Test or Live.
+
+### Officer Database editor enhancement — 16 November 2026 (Development only)
+- Added editable Rarity (Legendary / Epic / Elite) and Role fields to the Officer Database editor.
+- Added Rarity and Role to CSV export and import while retaining compatibility with older CSV files that omit those columns.
+- Replaced the line-based CSV parser with a parser that supports quoted commas, escaped quotes and embedded line breaks; added required-header checks, import validation, confirmation before replacing the local database and file-read error handling.
+- Extended Officer database validation for required names, duplicate names, Season, Rarity and Role while retaining the existing ORV/SRV validation rules.
+- Browser regression on this commit: 161 passed, 0 failed (run `43958525071`). Officer-data validation completed successfully (run `43958525148`).
+- No skill progression costs, calculator logic, Officer datasets, application version or deployment configuration were changed.
 
 ## v4.6.0 STABLE
 - Promoted the corrected Edit Officer Progress build to Stable.
