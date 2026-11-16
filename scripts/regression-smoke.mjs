@@ -247,7 +247,36 @@ try {
 
   check('No uncaught browser JavaScript exceptions', pageErrors.length === 0, pageErrors.join(' | '));
 } catch (error) {
-  failures.push('Test execution stopped: ' + error.message);
+  let diagnostic = {};
+  try {
+    diagnostic = await page.evaluate(() => {
+      const select = document.querySelector('#officerSelect');
+      const option = select?.options?.[select.selectedIndex];
+      const index = Number(select?.value);
+      const published = window.KOW_PUBLISHED_OFFICERS || [];
+      return {
+        selectedValue: select?.value ?? null,
+        selectedOptionText: option?.textContent?.trim() ?? null,
+        selectedOptionHtml: option?.outerHTML ?? null,
+        publishedOfficerAtIndex: Number.isInteger(index) ? published[index] ?? null : null,
+        displayedRarity: document.querySelector('#officerRarityValue')?.textContent?.trim() ?? null,
+        displayedSeason: document.querySelector('#officerSeasonValue')?.textContent?.trim() ?? null,
+        dashboardOfficer: document.querySelector('#dashOfficer')?.textContent?.trim() ?? null,
+        activeView: document.querySelector('.view.active')?.id ?? null,
+        filterValues: {
+          search: document.querySelector('#officerSearch')?.value ?? null,
+          season: document.querySelector('#officerSeasonFilter')?.value ?? null,
+          rarity: document.querySelector('#officerRarityFilter')?.value ?? null,
+          role: document.querySelector('#officerRoleFilter')?.value ?? null
+        }
+      };
+    });
+  } catch (diagnosticError) {
+    diagnostic = { diagnosticReadError: diagnosticError.message };
+  }
+  failures.push('Test execution stopped: ' + error.message +
+    ' | selection diagnostic: ' + JSON.stringify(diagnostic) +
+    ' | browser errors: ' + pageErrors.join(' || '));
 } finally {
   console.log('Application regression smoke test');
   console.log('=================================');
