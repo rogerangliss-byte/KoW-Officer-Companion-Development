@@ -1026,14 +1026,14 @@ try {
   await page.locator('#multiChestMode').selectOption('badge');
   await page.waitForTimeout(150);
   const multiSummary = await page.locator('#multiPlannerSummary').innerText();
-  const multiTotals = multiSummary.match(/(\\d+) of (\\d+) required badge equivalents covered/);
+  const multiTotals = multiSummary.match(/(\d+) of (\d+) required badge equivalents covered/);
   const multiNeed = multiTotals ? Number(multiTotals[2]) : -1;
   check('Multi-Officer Planner uses the same saved Officer badge shortfall as Single-Officer',
     multiNeed > 0 && singleRequired === multiNeed - 1,
     'single required=' + singleRequired + '; multi summary=' + multiSummary);
   check('Multi-Officer Planner preserves 719 ORV and allocates exactly one Universal Badge',
     await crossRow.locator('[data-multi-allocated]').innerText() === '1 / ' + multiNeed &&
-    /0 of \\d+ required badge equivalents covered/.test(multiSummary) === false &&
+    multiSummary.includes('1 of ' + multiNeed + ' required badge equivalents covered') &&
     /719 ORV · 0 Universal Badges · 0 Selection Chests/.test(multiSummary),
     'row=' + await crossRow.locator('[data-multi-allocated]').innerText() + '; summary=' + multiSummary);
 
@@ -1052,7 +1052,7 @@ try {
     /Inventory detected: ORV 719, Universal Badges 1/.test(advancedCrossText),
     advancedCrossText.slice(-250));
   check('Advanced Planner does not recommend ORV funding below the one-badge threshold',
-    /Use Officer-specific badges first\\. Use flexible Universal\\/Selection resources only where required\\./.test(advancedCrossText),
+    /Use Officer-specific badges first\. Use flexible Universal\/Selection resources only where required\./.test(advancedCrossText),
     advancedCrossText.slice(0, 300));
 
   await page.evaluate(state => {
