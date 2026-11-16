@@ -1069,6 +1069,136 @@ try {
       localStorage.getItem('kow_central_inventory_v1') === state.central &&
       localStorage.getItem('kow_global_resources_v435') === state.global, crossCalculatorFixture));
 
+
+  // Mixed-roster cross-calculator audit: Elite, Epic and Legendary Officers,
+  // plus an Officer-specific Selection Chest for S6 Emily.
+  const mixedRarityFixture = await page.evaluate(() => ({
+    profiles: localStorage.getItem('kow_officer_profiles_v435'),
+    central: localStorage.getItem('kow_central_inventory_v1'),
+    global: localStorage.getItem('kow_global_resources_v435')
+  }));
+  const mixedRarityProfiles = {
+    'Original|Marjorie': { unlocked:false, skills:Array(36).fill(false), training:0, currentStar:0, currentLevel:1, badgeHeld:0, savedAt:'2026-11-16T00:00:00.000Z' },
+    'Original|Evelyn': { unlocked:false, skills:Array(36).fill(false), training:0, currentStar:0, currentLevel:1, badgeHeld:0, savedAt:'2026-11-16T00:00:00.000Z' },
+    'S8|S8 Po': { unlocked:false, skills:Array(36).fill(false), training:0, currentStar:0, currentLevel:1, badgeHeld:0, savedAt:'2026-11-16T00:00:00.000Z' },
+    'S6|S6 Emily': { unlocked:false, skills:Array(36).fill(false), training:0, currentStar:0, currentLevel:1, badgeHeld:0, savedAt:'2026-11-16T00:00:00.000Z' }
+  };
+  await page.evaluate(profiles => {
+    localStorage.setItem('kow_officer_profiles_v435', JSON.stringify(profiles));
+    localStorage.removeItem('kow_central_inventory_v1');
+    localStorage.setItem('kow_global_resources_v435', JSON.stringify({
+      orvHeld:'720', universalBadgeHeld:'0', universalEpicBadgeHeld:'0',
+      universalEliteBadgeHeld:'0', legendaryBadgeChestHeld:'0',
+      legendarySelectionChestHeld:'1', legendaryBadgeChestMode:'badge',
+      srvHeld:'0', xp:{}, savedAt:'2026-11-16T00:00:00.000Z'
+    }));
+  }, mixedRarityProfiles);
+
+  // Single-Officer calculator: compare complete development totals across all rarities.
+  const mixedRarityCases = [
+    { name:'Marjorie', rarity:'Elite', total:18350 },
+    { name:'Evelyn', rarity:'Epic', total:4950 },
+    { name:'S8 Po', rarity:'Legendary', total:1600 }
+  ];
+  for (const item of mixedRarityCases) {
+    await page.locator('[data-view="officer"]').click();
+    await page.locator('#officerSelect').selectOption({ label:item.name });
+    await page.locator('[data-view="stars"]').click();
+    await page.locator('#currentStar').selectOption('5');
+    await page.locator('[data-view="development"]').click();
+    await page.locator('#unlocked').check();
+    for (let strand=0; strand<4; strand++) {
+      await page.locator('#skillGrid .skill-strand-row:not(.fifth-skill-status)').nth(strand).locator('button.skill-lvl').nth(9).click();
+    }
+    await page.waitForFunction(() => !document.querySelector('#trainingExact')?.disabled);
+    await page.locator('#trainingExact').fill('180');
+    await page.waitForTimeout(100);
+    const used = Number((await page.locator('#badgesUsed').innerText()).replace(/[^0-9]/g,''));
+    check('Single-Officer full development total matches '+item.rarity+' baseline for '+item.name,
+      used === item.total, 'expected '+item.total+'; got '+used);
+  }
+
+  // Multi-Officer Planner: defaults must use each Officer's own rarity-specific
+  // maximum, then allocate ORV and Selection Chests only to eligible Officers.
+  await page.locator('[data-view="planner"]').click();
+  while (await page.locator('#multiPlannerRows tr').count()) {
+    await page.locator('#multiPlannerRows tr').first().locator('[data-remove]').click();
+  }
+  const mixedRoster = [];
+  for (const item of [
+    {name:'Marjorie', total:18350},
+    {name:'Evelyn', total:4950},
+    {name:'S8 Po', total:1600},
+    {name:'S6 Emily', total:1600}
+  ]) {
+    await page.locator('#multiAddOfficer').click();
+    const row = page.locator('#multiPlannerRows tr').last();
+    await row.locator('[data-multi-officer]').selectOption({label:item.name});
+    mixedRoster.push({row, ...item});
+  }
+  check('Multi-Officer Planner defaults to the correct Elite, Epic and Legendary maximum badge totals',
+    (await Promise.all(mixedRoster.map(x=>x.row.locator('[data-multi-needed]').inputValue()))).map(Number)
+      .join('|') === '18350|4950|1600|1600',
+    JSON.stringify(await Promise.all(mixedRoster.map(async x=>({name:x.name,needed:await x.row.locator('[data-multi-needed]').inputValue()})))));
+  for (const x of mixedRoster) await x.row.locator('[data-multi-needed]').fill('1');
+  await page.locator('#multiOrv').fill('720');
+  await page.locator('#multiUniversal').fill('0');
+  await page.locator('#multiChests').fill('0');
+  await page.locator('#multiSelectionChests').fill('1');
+  await page.locator('#multiChestMode').selectOption('badge');
+  await page.waitForTimeout(120);
+  check('Mixed roster: ORV funds the eligible seasonal Legendary Officer only',
+    await mixedRoster[0].row.locator('[data-multi-allocated]').innerText()==='0 / 1' &&
+    await mixedRoster[1].row.locator('[data-multi-allocated]').innerText()==='0 / 1' &&
+    await mixedRoster[2].row.locator('[data-multi-allocated]').innerText()==='1 / 1',
+    JSON.stringify(await Promise.all(mixedRoster.slice(0,3).map(async x=>({name:x.name,allocation:await x.row.locator('[data-multi-allocated]').innerText()})))));
+  check('Mixed roster: Selection Chest is reserved for eligible S6 Emily, not S8 Po or Epic/Elite Officers',
+    await mixedRoster[3].row.locator('[data-multi-allocated]').innerText()==='1 / 1' &&
+    await mixedRoster[3].row.locator('[data-multi-status]').innerText()==='Fully Funded' &&
+    /0 ORV · 0 Universal Badges · 0 Selection Chests/.test(await page.locator('#multiPlannerSummary').innerText()),
+    await page.locator('#multiPlannerSummary').innerText());
+  await page.locator('#multiOrv').fill('0');
+  await page.waitForTimeout(100);
+  check('Selection Chest eligibility is independent of priority and excludes ineligible S8 Po',
+    await mixedRoster[2].row.locator('[data-multi-allocated]').innerText()==='0 / 1' &&
+    await mixedRoster[3].row.locator('[data-multi-allocated]').innerText()==='1 / 1' &&
+    /1 Selection Chests/.test(await page.locator('#multiPlannerSummary').innerText()),
+    await page.locator('#multiPlannerSummary').innerText());
+
+  // Advanced Planner: saved progress must use the same rarity-specific maximums.
+  await page.locator('#kowPlannerSession').selectOption('saved');
+  await page.locator('#kowPlannerSeasonFilter').selectOption('all');
+  await page.locator('#kowPlannerIncludeNotStarted').check();
+  await page.locator('#kowPlannerIncludeOriginals').check();
+  await page.locator('#advancedMultiOfficerPlanning button[onclick="kowRunAdvancedPlanner()"]').click();
+  await page.waitForTimeout(150);
+  const mixedAdvancedRows = await page.locator('#kowAdvancedPlannerResults tbody tr').evaluateAll(rows =>
+    rows.map(row=>Array.from(row.querySelectorAll('td')).map(cell=>cell.innerText.trim())));
+  const mixedAdvancedMap = Object.fromEntries(mixedAdvancedRows.map(row=>[
+    row[1], Number(String(row[5]||'').replace(/[^0-9]/g,''))
+  ]));
+  check('Advanced Planner includes the mixed-rarity saved roster',
+    ['Marjorie','Evelyn','S8 Po','S6 Emily'].every(name=>Object.prototype.hasOwnProperty.call(mixedAdvancedMap,name)),
+    JSON.stringify(mixedAdvancedRows.map(row=>row.slice(0,6))));
+  check('Advanced Planner badge shortfalls match rarity-specific maximums across the same roster',
+    mixedAdvancedMap.Marjorie===18350 && mixedAdvancedMap.Evelyn===4950 &&
+    mixedAdvancedMap['S8 Po']===1600 && mixedAdvancedMap['S6 Emily']===1600,
+    JSON.stringify(mixedAdvancedMap));
+
+  await page.evaluate(state => {
+    const restore=(key,value)=>value===null?localStorage.removeItem(key):localStorage.setItem(key,value);
+    restore('kow_officer_profiles_v435',state.profiles);
+    restore('kow_central_inventory_v1',state.central);
+    restore('kow_global_resources_v435',state.global);
+  }, mixedRarityFixture);
+  await page.reload({waitUntil:'domcontentloaded'});
+  await page.waitForFunction(()=>document.querySelectorAll('#officerSelect option').length===68);
+  check('Mixed-rarity audit restores original saved profiles and inventory fixtures',
+    await page.evaluate(state=>
+      localStorage.getItem('kow_officer_profiles_v435')===state.profiles &&
+      localStorage.getItem('kow_central_inventory_v1')===state.central &&
+      localStorage.getItem('kow_global_resources_v435')===state.global,mixedRarityFixture));
+
   // Database and release forecast.
   await page.locator('[data-view="database"]').click();
   check('Officer database table renders all records', await page.locator('#dbRows tr').count() === 68);
