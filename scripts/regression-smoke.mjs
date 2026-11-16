@@ -95,7 +95,7 @@ try {
   check('MAX unlocks Officer and completes four primary skills',
     await page.locator('#unlocked').isChecked() &&
     await page.locator('#skillGrid .skill-strand-row:not(.fifth-skill-status)').count() === 4 &&
-    await page.locator('#skillGrid .skill-strand-row:not(.fifth-skill-status) button.skill-step.completed').count() === 36);
+    await page.locator('#skillGrid .skill-strand-row:not(.fifth-skill-status) button.skill-lvl.reached').count() === 40);
   check('MAX sets training to 180', await page.locator('#trainingExact').inputValue() === '180');
   check('MAX leaves shared ORV inventory untouched', await page.locator('#orvHeld').inputValue() === '4321');
   await page.locator('#resetOfficerProfile').click();
