@@ -48,14 +48,23 @@ try {
     if (value === undefined) throw new Error('Officer not found: ' + name);
     await page.locator('#officerSelect').selectOption(value);
     await page.waitForFunction(expected => document.querySelector('#officerSelect')?.value === expected, value);
+    await page.waitForFunction(() => {
+      const name = document.querySelector('#officerSelect option:checked')?.textContent?.trim();
+      const dash = document.querySelector('#dashOfficer')?.textContent?.trim();
+      return !!name && (!dash || dash === name);
+    });
     await page.locator('[data-view="development"]').click();
+    await page.waitForFunction(() => {
+      const grid = document.querySelector('#skillGrid');
+      return !!grid && grid.querySelectorAll('.skill-strand-row:not(.fifth-skill-status)').length === 4 &&
+        !!grid.querySelector('.fifth-skill-status');
+    });
     return value;
   };
 
   // Confirm Elite does not expose a fifth skill.
   const marjorie = await selectOfficerForSkills('Marjorie');
   if (marjorie !== undefined) {
-    await page.waitForFunction(() => /Fifth Skill: Not available for Elite Officers/i.test(document.querySelector('#skillGrid .fifth-skill-status')?.textContent || ''));
     const skillRows = await page.locator('#skillGrid .skill-strand-row:not(.fifth-skill-status)').count();
     const fifthStatus = await page.locator('#skillGrid .fifth-skill-status').textContent();
     const fifthButtons = await page.locator('#skillGrid .fifth-skill-status button').count();
