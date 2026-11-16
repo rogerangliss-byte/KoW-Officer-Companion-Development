@@ -61,7 +61,6 @@ try {
     const officerSelect = page.locator('#officerSelect');
     const optionState = await officerSelect.locator('option').evaluateAll((opts, targetValue) => {
       const match = opts.find(o => o.value === targetValue);
-    }, value);
       return {
         selectDisabled: document.querySelector('#officerSelect')?.disabled ?? null,
         selectedBefore: document.querySelector('#officerSelect')?.value ?? null,
@@ -69,7 +68,7 @@ try {
         targetDisabled: match?.disabled ?? null,
         targetText: match?.textContent?.trim() ?? null
       };
-    });
+    }, value);
     const selectionResult = await officerSelect.selectOption({ label: name });
     const selectionAfter = await officerSelect.inputValue();
     console.log('Officer selection diagnostic:', JSON.stringify({
