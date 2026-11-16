@@ -1131,8 +1131,9 @@ try {
     {name:'S8 Po', total:1600},
     {name:'S6 Emily', total:1600}
   ]) {
+    const rowIndex = await page.locator('#multiPlannerRows tr').count();
     await page.locator('#multiAddOfficer').click();
-    const row = page.locator('#multiPlannerRows tr').last();
+    const row = page.locator('#multiPlannerRows tr').nth(rowIndex);
     await row.locator('[data-multi-officer]').selectOption({label:item.name});
     mixedRoster.push({row, ...item});
   }
