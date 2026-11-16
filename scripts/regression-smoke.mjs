@@ -107,10 +107,14 @@ try {
     check('Epic skill badge total is 440', /Epic Skill Badge progression:\s*440 Officer Badges total/i.test(epicNotice), epicNotice);
     await page.locator('label.check').filter({ hasText: 'Officer unlocked (10 badges)' }).click();
     const setEpicStars = async value => {
+      // Star progress is edited through the Officer Progress modal. #currentStar
+      // belongs to the separate Star Planner view and is not visible on Officer.
       await page.locator('[data-view="officer"]').click();
-      await page.locator('#currentStar').selectOption(String(value));
-      await page.locator('[data-view="development"]').click();
+      await page.locator('#quickProgressBtn').click();
+      await page.locator('#quickStarLevel').selectOption(String(value));
+      await page.locator('#quickProgressSave').click();
       await page.waitForFunction(expected => Number(document.querySelector('#currentStar')?.value) === expected, value);
+      await page.locator('[data-view="development"]').click();
     };
     await setEpicStars(0);
     check('Epic skill strand star gates begin at 0 stars', await page.locator('#skillGrid .skill-strand-row:not(.fifth-skill-status)').nth(0).locator('button.skill-lvl').first().isEnabled() &&
