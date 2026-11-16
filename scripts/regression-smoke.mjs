@@ -41,6 +41,9 @@ try {
   check('S8 Po ORV rate is 720', await page.locator('#orvCost').inputValue() === '720');
   check('S8 Po SRV rate is 360', await page.locator('#srvCost').inputValue() === '360');
 
+  // Skill progression controls live in the Development view, not the Officer view.
+  await page.locator('[data-view="development"]').click();
+
   // Confirm Elite does not expose a fifth skill.
   const marjorie = await page.locator('#officerSelect option').evaluateAll(opts => opts.find(o => /Marjorie/i.test(o.textContent))?.value);
   if (marjorie !== undefined) {
