@@ -256,6 +256,105 @@ try {
   await page.locator('#saveScenario').click();
   check('Planning scenario can be saved', /Automated regression scenario/.test(await page.locator('#savedScenarioList').innerText()));
 
+  // Saved scenario / readiness dashboard snapshot isolation and lifecycle audit.
+  const scenarioFixture = await page.evaluate(() => ({
+    scenarios: localStorage.getItem('kow_v4359_planning_scenarios'),
+    inventory: localStorage.getItem('kow_central_inventory_v1')
+  }));
+  const scenarioInventory = {
+    invOrv: 1728, invSrv: 432, invUniversalLegendary: 2,
+    invLegendaryBadgeChests: 1, invLegendarySelectionChests: 3,
+    invLegStar1: 10, invLegStar2: 2, invLegStar3: 1,
+    invXp100: 0, invXp500: 0, invXp1000: 0, invXp5000: 0,
+    invXp10000: 0, invXp20000: 0, invXp50000: 0,
+    savedAt: '2026-11-16T12:00:00.000Z'
+  };
+  await page.evaluate(inventory => {
+    localStorage.setItem('kow_v4359_planning_scenarios', '[]');
+    localStorage.setItem('kow_central_inventory_v1', JSON.stringify(inventory));
+  }, scenarioInventory);
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await page.locator('[data-view="planner"]').click();
+  await page.locator('#scenarioSession').selectOption('next');
+  await page.locator('#scenarioOfficerCount').selectOption('1');
+  await page.locator('#scenarioName').fill('Snapshot Alpha');
+  await page.locator('#scenarioYear').fill('2027');
+  await page.locator('#calculateScenario').click();
+  await page.locator('#saveScenario').click();
+  let savedScenarios = await page.evaluate(() => JSON.parse(localStorage.getItem('kow_v4359_planning_scenarios') || '[]'));
+  check('Saved scenario records the inventory snapshot used at calculation time',
+    savedScenarios.length === 1 && savedScenarios[0].held.orv === 1728 &&
+    savedScenarios[0].held.badges === 5 && savedScenarios[0].held.selectionChests === 3,
+    JSON.stringify(savedScenarios[0]?.held));
+  check('Scenario snapshot excludes Officer-specific Selection Chests from shared badge readiness',
+    savedScenarios.length === 1 && savedScenarios[0].held.badges === 5 &&
+    savedScenarios[0].held.badgeParts.selectionChests === 3,
+    JSON.stringify(savedScenarios[0]?.held));
+  check('Readiness dashboard renders the saved scenario',
+    /Snapshot Alpha/.test(await page.locator('#v440PlanningReadiness').innerText()),
+    (await page.locator('#v440PlanningReadiness').innerText()).slice(0, 300));
+  await page.evaluate(() => {
+    const inventory = {
+      invOrv: 0, invSrv: 0, invUniversalLegendary: 0,
+      invLegendaryBadgeChests: 0, invLegendarySelectionChests: 0,
+      invLegStar1: 0, invLegStar2: 0, invLegStar3: 0,
+      invXp100: 0, invXp500: 0, invXp1000: 0, invXp5000: 0,
+      invXp10000: 0, invXp20000: 0, invXp50000: 0,
+      savedAt: '2026-11-16T13:00:00.000Z'
+    };
+    localStorage.setItem('kow_central_inventory_v1', JSON.stringify(inventory));
+  });
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await page.locator('[data-view="planner"]').click();
+  const alphaAfterInventoryChange = await page.locator('#savedScenarioList').innerText();
+  check('Changing current Inventory does not overwrite the saved scenario snapshot',
+    /ORV badge equivalents: 2/.test(alphaAfterInventoryChange) &&
+    /Shared Officer Badges held: 5/.test(alphaAfterInventoryChange),
+    alphaAfterInventoryChange.slice(0, 500));
+  check('Readiness dashboard continues to use the saved snapshot after Inventory changes',
+    /Snapshot Alpha/.test(await page.locator('#v440PlanningReadiness').innerText()) &&
+    /0%/.test(await page.locator('#v440PlanningReadiness').innerText()),
+    (await page.locator('#v440PlanningReadiness').innerText()).slice(0, 350));
+  await page.locator('[data-load-scenario="0"]').click();
+  check('Loading a saved scenario restores its session, year and name without mutating the saved record',
+    await page.locator('#scenarioSession').inputValue() === 'next' &&
+    await page.locator('#scenarioYear').inputValue() === '2027' &&
+    await page.locator('#scenarioName').inputValue() === 'Snapshot Alpha' &&
+    (await page.evaluate(() => JSON.parse(localStorage.getItem('kow_v4359_planning_scenarios') || '[]'))).length === 1);
+  await page.locator('#scenarioName').fill('Snapshot Beta');
+  await page.locator('#calculateScenario').click();
+  await page.locator('#saveScenario').click();
+  savedScenarios = await page.evaluate(() => JSON.parse(localStorage.getItem('kow_v4359_planning_scenarios') || '[]'));
+  check('Saving a recalculated scenario creates a separate saved record, preserving the original',
+    savedScenarios.length === 2 && savedScenarios[0].name === 'Snapshot Beta' &&
+    savedScenarios[1].name === 'Snapshot Alpha' && savedScenarios[1].held.badges === 5,
+    JSON.stringify(savedScenarios.map(s => ({name:s.name,badges:s.held.badges}))));
+  check('Readiness dashboard includes both saved scenarios independently',
+    /Snapshot Alpha/.test(await page.locator('#v440PlanningReadiness').innerText()) &&
+    /Snapshot Beta/.test(await page.locator('#v440PlanningReadiness').innerText()) &&
+    /Saved targets/.test(await page.locator('#v440PlanningReadiness').innerText()),
+    (await page.locator('#v440PlanningReadiness').innerText()).slice(0, 450));
+  await page.locator('[data-delete-scenario="0"]').click();
+  const afterScenarioDelete = await page.evaluate(() => JSON.parse(localStorage.getItem('kow_v4359_planning_scenarios') || '[]'));
+  check('Deleting one scenario preserves the other scenario and its original snapshot',
+    afterScenarioDelete.length === 1 && afterScenarioDelete[0].name === 'Snapshot Alpha' &&
+    afterScenarioDelete[0].held.badges === 5 && afterScenarioDelete[0].held.orv === 1728,
+    JSON.stringify(afterScenarioDelete.map(s => ({name:s.name,badges:s.held.badges,orv:s.held.orv}))));
+  check('Readiness dashboard removes only the deleted scenario',
+    /Snapshot Alpha/.test(await page.locator('#v440PlanningReadiness').innerText()) &&
+    !/Snapshot Beta/.test(await page.locator('#v440PlanningReadiness').innerText()),
+    (await page.locator('#v440PlanningReadiness').innerText()).slice(0, 350));
+  await page.evaluate(({ scenarios, inventory }) => {
+    const restore = (key, value) => value === null ? localStorage.removeItem(key) : localStorage.setItem(key, value);
+    restore('kow_v4359_planning_scenarios', scenarios);
+    restore('kow_central_inventory_v1', inventory);
+  }, scenarioFixture);
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await page.locator('[data-view="planner"]').click();
+  check('Scenario and Inventory test fixtures are restored after the audit',
+    await page.evaluate(previous => localStorage.getItem('kow_v4359_planning_scenarios') === previous.scenarios &&
+      localStorage.getItem('kow_central_inventory_v1') === previous.inventory, scenarioFixture));
+
   // Multi-Officer Planner: priority allocation, saved-plan round trip and deletion.
   await page.locator('[data-view="planner"]').click();
   // Clear any restored working rows so this test starts from a deterministic state.
