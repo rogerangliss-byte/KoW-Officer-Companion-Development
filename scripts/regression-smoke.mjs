@@ -59,8 +59,9 @@ try {
       });
     });
     const officerSelect = page.locator('#officerSelect');
-    const optionState = await officerSelect.locator('option').evaluateAll(opts => {
-      const match = opts.find(o => o.value === value);
+    const optionState = await officerSelect.locator('option').evaluateAll((opts, targetValue) => {
+      const match = opts.find(o => o.value === targetValue);
+    }, value);
       return {
         selectDisabled: document.querySelector('#officerSelect')?.disabled ?? null,
         selectedBefore: document.querySelector('#officerSelect')?.value ?? null,
