@@ -21,7 +21,11 @@
     box.style.marginBottom='12px';
     box.innerHTML='<b>Global Officer Data:</b> checking published dataset…';
     const card=updates?.closest('.card')||settings.querySelector('.card')||settings;
-    card.insertBefore(box,updates||card.firstChild);
+    // Only use an insertion reference that is actually a child of the chosen card.
+    // The Update Status control can live elsewhere in Settings in some app layouts.
+    const anchor=updates&&updates.parentNode===card?updates:card.firstChild;
+    if(anchor)card.insertBefore(box,anchor);
+    else card.appendChild(box);
     return box;
   }
 
