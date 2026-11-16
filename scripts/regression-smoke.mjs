@@ -39,9 +39,11 @@ try {
   if (marjorie !== undefined) {
     await page.locator('#officerSelect').selectOption(marjorie);
     const skillText = await page.locator('#skillGrid').innerText();
-    const skillRows = await page.locator('#skillGrid .skill-strand-row').count();
-    check('Elite Marjorie has exactly four primary skill strands and no fifth', skillRows === 4 && !/Skill 5|Fifth Skill Strand/i.test(skillText),
-      `found ${skillRows} skill rows; ${skillText.slice(0, 140)}`);
+    const skillRows = await page.locator('#skillGrid .skill-strand-row:not(.fifth-skill-status)').count();
+    const fifthStatus = await page.locator('#skillGrid .fifth-skill-status').innerText();
+    const fifthButtons = await page.locator('#skillGrid .fifth-skill-status button').count();
+    check('Elite Marjorie has four primary strands and no fifth skill controls', skillRows === 4 && fifthButtons === 0 && /Not available for Elite Officers/i.test(fifthStatus),
+      `found ${skillRows} primary rows; fifth status: ${fifthStatus}`);
   } else check('Elite Marjorie is present', false);
 
   // Inventory save / restore in this isolated browser profile only.
@@ -71,8 +73,7 @@ try {
   // Development skills and training controls.
   await page.locator('[data-view="development"]').click();
   check('Skill strands render', await page.locator('#skillGrid').innerText().then(t => t.trim().length > 0));
-  await page.locator('#trainingExact').fill('0');
-  check('Training controls accept input', await page.locator('#trainingExact').inputValue() === '0');
+  check('Training remains locked until all four primary skills are complete', await page.locator('#trainingExact').isDisabled());
 
   // XP calculation.
   await page.locator('[data-view="xp"]').click();
