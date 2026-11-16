@@ -58,7 +58,7 @@ try {
   if (epic !== undefined) {
     await page.locator('#officerSelect').selectOption(epic);
     check('Epic skill badge total is 440', /440 Officer Badges total/.test(await page.locator('#skillSequenceNotice').innerText()));
-    await page.locator('#unlocked').check({ force: true });
+    await page.locator('label.check').filter({ hasText: 'Officer unlocked (10 badges)' }).click();
     await page.locator('#currentStar').selectOption('0');
     await page.waitForTimeout(100);
     check('Epic skill strand star gates begin at 0 stars', await page.locator('#skillGrid .skill-strand-row:not(.fifth-skill-status)').nth(0).locator('button.skill-lvl').first().isEnabled() &&
