@@ -330,6 +330,8 @@ try {
     await page.locator('#universalBadgesAvailable').innerText().then(v => Number(v.replace(/[^0-9]/g,'')) === 3));
 
   // Legendary SRV converts only in whole 360-SRV Exclusive Star units.
+  await page.locator('[data-view="officer"]').click();
+  await page.locator('#officerSelect').selectOption({ label: 'S8 Po' });
   await page.locator('[data-view="stars"]').click();
   await page.locator('#currentStar').selectOption('0');
   await page.locator('#targetStar').selectOption('5');
