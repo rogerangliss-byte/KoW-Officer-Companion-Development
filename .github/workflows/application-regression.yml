@@ -1,0 +1,50 @@
+name: Application regression smoke tests
+
+on:
+  push:
+    branches:
+      - feature/**
+    paths:
+      - 'index.html'
+      - 'officers.json'
+      - 'officer-portraits/**'
+      - 'scripts/regression-smoke.mjs'
+      - '.github/workflows/application-regression.yml'
+  pull_request:
+    paths:
+      - 'index.html'
+      - 'officers.json'
+      - 'officer-portraits/**'
+      - 'scripts/regression-smoke.mjs'
+      - '.github/workflows/application-regression.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  browser-regression:
+    name: Browser regression — key application workflows
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install Playwright
+        run: npm install --no-save playwright
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Start local application server
+        run: |
+          python3 -m http.server 4173 --bind 127.0.0.1 > /tmp/officer-command-centre-http.log 2>&1 &
+          echo $! > /tmp/officer-command-centre-http.pid
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:4173/ > /dev/null; then exit 0; fi
+            sleep 1
+          done
+          cat /tmp/officer-command-centre-http.log
+          exit 1
+      - name: Run browser regression tests
+        run: node scripts/regression-smoke.mjs
