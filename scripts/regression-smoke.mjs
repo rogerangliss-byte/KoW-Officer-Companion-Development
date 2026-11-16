@@ -404,10 +404,24 @@ try {
   await page.locator('#kowFutureOfficerType').selectOption('auto');
   await page.locator('#kowPlannerIncludeNotStarted').uncheck();
   await page.locator('#kowPlannerIncludeOriginals').uncheck();
-  await page.locator('#orvHeld').fill('719');
-  await page.locator('#universalBadgeHeld').fill('0');
-  await page.locator('#legendaryBadgeChestHeld').fill('0');
-  await page.locator('#legendarySelectionChestHeld').fill('0');
+  const setAdvancedPlannerInventory = async ({ orv = 0, universal = 0, badgeChests = 0, selection = 0 }) => {
+    await page.evaluate(values => {
+      const fields = {
+        orvHeld: values.orv,
+        universalBadgeHeld: values.universal,
+        legendaryBadgeChestHeld: values.badgeChests,
+        legendarySelectionChestHeld: values.selection
+      };
+      Object.entries(fields).forEach(([id, value]) => {
+        const input = document.getElementById(id);
+        if (!input) throw new Error('Missing inventory input: ' + id);
+        input.value = String(value);
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+        input.dispatchEvent(new Event('change', { bubbles: true }));
+      });
+    }, { orv, universal, badgeChests, selection });
+  };
+  await setAdvancedPlannerInventory({ orv: 719 });
   await page.locator('#advancedMultiOfficerPlanning button[onclick="kowRunAdvancedPlanner()"]').click();
   await page.waitForTimeout(100);
   let plannerRows = page.locator('#kowAdvancedPlannerResults tbody tr');
@@ -427,7 +441,7 @@ try {
   check('Advanced Planner gives the no-funded-ORV recommendation below the 720 threshold',
     plannerCells.every(row => row[4].includes('Use Officer-specific badges first.')),
     JSON.stringify(plannerCells.map(row => row[4])));
-  await page.locator('#orvHeld').fill('720');
+  await setAdvancedPlannerInventory({ orv: 720 });
   await page.locator('#advancedMultiOfficerPlanning button[onclick="kowRunAdvancedPlanner()"]').click();
   plannerRows = page.locator('#kowAdvancedPlannerResults tbody tr');
   plannerCells = await plannerRows.evaluateAll(rows => rows.map(row =>
@@ -435,8 +449,7 @@ try {
   check('Advanced Planner changes its recommendation when ORV reaches exactly one badge',
     plannerCells.every(row => row[4].includes('then ORV where eligible')),
     JSON.stringify(plannerCells.map(row => row[4])));
-  await page.locator('#orvHeld').fill('0');
-  await page.locator('#universalBadgeHeld').fill('1');
+  await setAdvancedPlannerInventory({ universal: 1 });
   await page.locator('#advancedMultiOfficerPlanning button[onclick="kowRunAdvancedPlanner()"]').click();
   check('Advanced Planner reports shared Universal Badge inventory separately from ORV',
     /ORV 0/.test(await page.locator('#kowAdvancedPlannerResults').innerText()) &&
