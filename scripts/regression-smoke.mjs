@@ -53,6 +53,47 @@ try {
       `found ${skillRows} primary rows; fifth status: ${fifthStatus}`);
   } else check('Elite Marjorie is present', false);
 
+  // Independent Officer profiles and shared-resource persistence.
+  page.on('dialog', dialog => dialog.accept());
+  await page.locator('[data-view="officer"]').click();
+  await page.locator('#officerSelect').selectOption({ label: 'S8 Po' });
+  await page.locator('#currentLevel').fill('2');
+  await page.locator('#currentStar').selectOption('1');
+  await page.locator('#orvHeld').fill('4321');
+  await page.locator('#orvHeld').dispatchEvent('input');
+  await page.locator('#orvHeld').dispatchEvent('change');
+  await page.locator('#saveOfficerProfile').click();
+  await page.waitForTimeout(200);
+  check('First Officer profile saves', /Saved/.test(await page.locator('#profileSavedStatus').innerText()));
+  await page.locator('#officerSelect').selectOption({ label: 'S8 Sara' });
+  check('Shared ORV inventory survives Officer switch', await page.locator('#orvHeld').inputValue() === '4321',
+    'expected 4321 ORV after switching, got ' + await page.locator('#orvHeld').inputValue());
+  await page.locator('#currentLevel').fill('3');
+  await page.locator('#currentStar').selectOption('2');
+  await page.locator('#saveOfficerProfile').click();
+  await page.waitForTimeout(200);
+  await page.locator('#officerSelect').selectOption({ label: 'S8 Po' });
+  check('First Officer profile restores independently', await page.locator('#currentLevel').inputValue() === '2' && await page.locator('#currentStar').inputValue() === '1');
+  await page.locator('#officerSelect').selectOption({ label: 'S8 Sara' });
+  check('Second Officer profile restores independently', await page.locator('#currentLevel').inputValue() === '3' && await page.locator('#currentStar').inputValue() === '2');
+
+  await page.locator('[data-view="progress"]').click();
+  await page.waitForTimeout(150);
+  check('Saved Officer progress overview lists both profiles',
+    await page.locator('#savedOfficerProgressRows tr').count() >= 2,
+    'rows=' + await page.locator('#savedOfficerProgressRows tr').count());
+  const compareNames = await page.locator('#compareProgressChoices .progressComparePick').count();
+  check('Progress comparison offers saved Officers', compareNames >= 2, 'choices=' + compareNames);
+  await page.locator('#compareProgressClear').click();
+  await page.locator('#compareProgressChoices .progressComparePick').nth(0).check();
+  await page.locator('#compareProgressChoices .progressComparePick').nth(1).check();
+  await page.locator('#compareProgressRun').click();
+  check('Progress comparison renders two selected Officers',
+    await page.locator('#compareProgressResults tr').count() === 2,
+    'rows=' + await page.locator('#compareProgressResults tr').count());
+  check('Progress comparison produces a recommendation',
+    (await page.locator('#compareProgressRecommendation').innerText()).trim().length > 0);
+
   // Inventory save / restore in this isolated browser profile only.
   await page.locator('[data-view="inventory"]').click();
   await page.locator('#invOrv').fill('1234');
