@@ -1296,7 +1296,13 @@ try {
     await allResourcesPo.locator('[data-multi-status]').innerText() === 'Fully Funded' &&
     /5 of 5 required badge equivalents covered: 1 Individual Officer Badges held \\+ 4 shared badges allocated/.test(allResourcesSummary) &&
     /0 ORV · 0 Universal Badges · 0 Selection Chests/.test(allResourcesSummary),
-    allResourcesSummary);
+    allResourcesSummary + '\\nCode held=' + await allResourcesCode.locator('[data-multi-held]').innerText() +
+    ', allocated=' + await allResourcesCode.locator('[data-multi-allocated]').innerText() +
+    ', status=' + await allResourcesCode.locator('[data-multi-status]').innerText() +
+    '; Katherine allocated=' + await allResourcesKatherine.locator('[data-multi-allocated]').innerText() +
+    ', status=' + await allResourcesKatherine.locator('[data-multi-status]').innerText() +
+    '; Po allocated=' + await allResourcesPo.locator('[data-multi-allocated]').innerText() +
+    ', status=' + await allResourcesPo.locator('[data-multi-status]').innerText());
   check('Optimiser resolves equal mixed-inventory coverage without double-counting Badge Chests',
     /Optimised: use Badge Chests as Universal Badges/.test(allResourcesSummary),
     allResourcesSummary);
