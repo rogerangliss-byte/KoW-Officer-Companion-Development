@@ -577,6 +577,11 @@ try {
   check('Settings app-name control is interactive', await page.locator('#appName').inputValue() === 'REGRESSION TEST');
 
   check('No uncaught browser JavaScript exceptions', pageErrors.length === 0, pageErrors.join(' | '));
+  // Return to the Planner view before interacting with its controls; the preceding
+  // settings checks intentionally leave Settings active, where planner rows are hidden.
+  await page.locator('[data-view="planner"]').click();
+  await page.locator('#multiPlannerCard').waitFor({ state: 'visible' });
+
   // Partial-funding audit: retain unusable ORV remainders and report partial coverage accurately.
   edgeRow = await resetMultiCase('S8 Po', 2, { orv: 1439, mode: 'orv' });
   check('Partial funding allocates only whole badges and retains 719 ORV',
