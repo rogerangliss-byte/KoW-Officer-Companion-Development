@@ -1120,6 +1120,9 @@ try {
 
   // Restore not-started profiles after Single-Officer UI checks; those controls auto-save progress.
   await page.evaluate(profiles => localStorage.setItem('kow_officer_profiles_v435', JSON.stringify(profiles)), mixedRarityProfiles);
+  // Reload so no in-memory Officer editor state can auto-save over the clean fixtures.
+  await page.reload({waitUntil:'domcontentloaded'});
+  await page.waitForFunction(() => document.querySelectorAll('#officerSelect option').length===68);
 
   // Multi-Officer Planner: defaults must use each Officer's own rarity-specific
   // maximum, then allocate ORV and Selection Chests only to eligible Officers.
