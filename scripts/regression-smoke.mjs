@@ -1026,14 +1026,14 @@ try {
   await page.locator('#multiChestMode').selectOption('badge');
   await page.waitForTimeout(150);
   const multiSummary = await page.locator('#multiPlannerSummary').innerText();
-  const multiTotals = multiSummary.match(/(\d+) of (\d+) required badge equivalents covered/);
-  const multiNeed = multiTotals ? Number(multiTotals[2]) : -1;
+  const multiTotals = multiSummary.match(/([\d,]+) of ([\d,]+) required badge equivalents covered/);
+  const multiNeed = multiTotals ? Number(multiTotals[2].replace(/,/g, '')) : -1;
   check('Multi-Officer Planner uses the same saved Officer badge shortfall as Single-Officer',
     multiNeed > 0 && singleRequired === multiNeed - 1,
     'single required=' + singleRequired + '; multi summary=' + multiSummary);
   check('Multi-Officer Planner preserves 719 ORV and allocates exactly one Universal Badge',
-    await crossRow.locator('[data-multi-allocated]').innerText() === '1 / ' + multiNeed &&
-    multiSummary.includes('1 of ' + multiNeed + ' required badge equivalents covered') &&
+    await crossRow.locator('[data-multi-allocated]').innerText() === '1 / ' + multiNeed.toLocaleString('en-US') &&
+    multiSummary.includes('1 of ' + multiNeed.toLocaleString('en-US') + ' required badge equivalents covered') &&
     /719 ORV · 0 Universal Badges · 0 Selection Chests/.test(multiSummary),
     'row=' + await crossRow.locator('[data-multi-allocated]').innerText() + '; summary=' + multiSummary);
 
