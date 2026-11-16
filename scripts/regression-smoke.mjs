@@ -310,6 +310,90 @@ try {
     !/QA Multi Officer Plan/.test(await page.locator('#multiSavedPlans').innerText()) &&
     !(await page.evaluate(() => !!JSON.parse(localStorage.getItem('kow_multi_plans_v430') || '{}')['QA Multi Officer Plan'])));
 
+  // Multi-plan persistence and recovery: two distinct plans must remain isolated across reload.
+  const createAndSaveMultiPlan = async ({name, officer, needed, orv, universal, chests, selection, mode}) => {
+    while (await page.locator('#multiPlannerRows tr').count()) {
+      await page.locator('#multiPlannerRows tr').first().locator('[data-remove]').click();
+    }
+    await page.locator('#multiAddOfficer').click();
+    const row = page.locator('#multiPlannerRows tr').first();
+    await row.locator('[data-multi-officer]').selectOption({ label: officer });
+    await row.locator('[data-multi-needed]').fill(String(needed));
+    await page.locator('#multiOrv').fill(String(orv));
+    await page.locator('#multiUniversal').fill(String(universal));
+    await page.locator('#multiChests').fill(String(chests));
+    await page.locator('#multiSelectionChests').fill(String(selection));
+    await page.locator('#multiChestMode').selectOption(mode);
+    await page.locator('#multiPlanName').fill(name);
+    await page.locator('#multiSavePlan').click();
+  };
+  await createAndSaveMultiPlan({
+    name: 'QA Persistence Alpha', officer: 'S8 Po', needed: 2,
+    orv: 1439, universal: 0, chests: 0, selection: 0, mode: 'orv'
+  });
+  check('Persistence Alpha saves a partially funded plan with an ORV remainder',
+    !!(await page.evaluate(() => JSON.parse(localStorage.getItem('kow_multi_plans_v430') || '{}')['QA Persistence Alpha'])));
+  await createAndSaveMultiPlan({
+    name: 'QA Persistence Beta', officer: 'S7 Code', needed: 2,
+    orv: 346, universal: 1, chests: 1, selection: 0, mode: 'badge'
+  });
+  check('Persistence Beta is saved independently alongside Alpha',
+    await page.evaluate(() => {
+      const p = JSON.parse(localStorage.getItem('kow_multi_plans_v430') || '{}');
+      return !!p['QA Persistence Alpha'] && !!p['QA Persistence Beta'] &&
+        p['QA Persistence Alpha'].orv === 1439 && p['QA Persistence Beta'].orv === 346;
+    }));
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await page.waitForFunction(() => document.querySelectorAll('#officerSelect option').length >= 60);
+  await page.waitForTimeout(500);
+  await page.locator('[data-view="planner"]').click();
+  await page.locator('#multiSavedPlans').waitFor({ state: 'visible' });
+  check('Both saved Multi-Officer plans survive a full application reload',
+    await page.locator('#multiSavedPlans option').allTextContents().then(a =>
+      a.some(x => x.trim() === 'QA Persistence Alpha') && a.some(x => x.trim() === 'QA Persistence Beta')));
+  await page.locator('#multiSavedPlans').selectOption({ label: 'QA Persistence Alpha' });
+  let restoredRows = page.locator('#multiPlannerRows tr');
+  check('Reload restores Alpha resource balances, officer and badge requirement',
+    await page.locator('#multiOrv').inputValue() === '1439' &&
+    await page.locator('#multiUniversal').inputValue() === '0' &&
+    await restoredRows.count() === 1 &&
+    await restoredRows.first().locator('[data-multi-officer] option:checked').innerText() === 'S8 Po' &&
+    await restoredRows.first().locator('[data-multi-needed]').inputValue() === '2');
+  check('Reload recalculates Alpha partial funding without rounding its 719 ORV remainder',
+    await restoredRows.first().locator('[data-multi-allocated]').innerText() === '1 / 2' &&
+    await restoredRows.first().locator('[data-multi-status]').innerText() === 'Partially Funded' &&
+    /719 ORV/.test(await page.locator('#multiPlannerSummary').innerText()),
+    await page.locator('#multiPlannerSummary').innerText());
+  await page.locator('#multiSavedPlans').selectOption({ label: 'QA Persistence Beta' });
+  restoredRows = page.locator('#multiPlannerRows tr');
+  check('Switching to Beta restores its distinct resources and Officer row',
+    await page.locator('#multiOrv').inputValue() === '346' &&
+    await page.locator('#multiUniversal').inputValue() === '1' &&
+    await page.locator('#multiChests').inputValue() === '1' &&
+    await page.locator('#multiChestMode').inputValue() === 'badge' &&
+    await restoredRows.count() === 1 &&
+    await restoredRows.first().locator('[data-multi-officer] option:checked').innerText() === 'S7 Code');
+  await page.locator('#multiSavedPlans').selectOption({ label: 'QA Persistence Alpha' });
+  check('Switching back to Alpha does not inherit Beta resources or settings',
+    await page.locator('#multiOrv').inputValue() === '1439' &&
+    await page.locator('#multiUniversal').inputValue() === '0' &&
+    await page.locator('#multiChests').inputValue() === '0' &&
+    await page.locator('#multiChestMode').inputValue() === 'orv' &&
+    await page.locator('#multiPlannerRows tr').first().locator('[data-multi-officer] option:checked').innerText() === 'S8 Po');
+  await page.locator('#multiSavedPlans').selectOption({ label: 'QA Persistence Beta' });
+  await page.locator('#multiDeletePlan').click();
+  check('Deleting Beta leaves Alpha saved and selectable',
+    await page.evaluate(() => {
+      const p = JSON.parse(localStorage.getItem('kow_multi_plans_v430') || '{}');
+      return !!p['QA Persistence Alpha'] && !p['QA Persistence Beta'];
+    }) &&
+    await page.locator('#multiSavedPlans option').allTextContents().then(a => a.some(x => x.trim() === 'QA Persistence Alpha') && !a.some(x => x.trim() === 'QA Persistence Beta')));
+  await page.locator('#multiSavedPlans').selectOption({ label: 'QA Persistence Alpha' });
+  check('Remaining Alpha plan still restores its original partial allocation after Beta deletion',
+    await page.locator('#multiOrv').inputValue() === '1439' &&
+    await page.locator('#multiPlannerRows tr').first().locator('[data-multi-allocated]').innerText() === '1 / 2' &&
+    /719 ORV/.test(await page.locator('#multiPlannerSummary').innerText()));
+
   // Multi-Officer Planner edge cases: exact thresholds, held badges and chest strategies.
   const resetMultiCase = async (officerName, needed, resources = {}) => {
     while (await page.locator('#multiPlannerRows tr').count()) {
