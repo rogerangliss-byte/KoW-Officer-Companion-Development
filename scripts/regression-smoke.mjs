@@ -41,13 +41,19 @@ try {
   check('S8 Po ORV rate is 720', await page.locator('#orvCost').inputValue() === '720');
   check('S8 Po SRV rate is 360', await page.locator('#srvCost').inputValue() === '360');
 
-  // Skill progression controls live in the Development view, not the Officer view.
-  await page.locator('[data-view="development"]').click();
+  // Officer selection and skill controls live on separate views. Always select on Officer, then inspect Development.
+  const selectOfficerForSkills = async name => {
+    await page.locator('[data-view="officer"]').click();
+    const value = await page.locator('#officerSelect option').evaluateAll(opts => opts.find(o => new RegExp(name, 'i').test(o.textContent))?.value);
+    if (value === undefined) throw new Error('Officer not found: ' + name);
+    await page.locator('#officerSelect').selectOption(value);
+    await page.locator('[data-view="development"]').click();
+    return value;
+  };
 
   // Confirm Elite does not expose a fifth skill.
-  const marjorie = await page.locator('#officerSelect option').evaluateAll(opts => opts.find(o => /Marjorie/i.test(o.textContent))?.value);
+  const marjorie = await selectOfficerForSkills('Marjorie');
   if (marjorie !== undefined) {
-    await page.locator('#officerSelect').selectOption(marjorie);
     const skillText = await page.locator('#skillGrid').innerText();
     const skillRows = await page.locator('#skillGrid .skill-strand-row:not(.fifth-skill-status)').count();
     const fifthStatus = await page.locator('#skillGrid .fifth-skill-status').innerText();
@@ -57,9 +63,8 @@ try {
   } else check('Elite Marjorie is present', false);
 
   // Verify rarity-specific skill totals, star gates, and fifth-skill unlock behaviour.
-  const epic = await page.locator('#officerSelect option').evaluateAll(opts => opts.find(o => /Evelyn/i.test(o.textContent))?.value);
+  const epic = await selectOfficerForSkills('Evelyn');
   if (epic !== undefined) {
-    await page.locator('#officerSelect').selectOption(epic);
     check('Epic skill badge total is 440', /440 Officer Badges total/.test(await page.locator('#skillSequenceNotice').innerText()));
     await page.locator('label.check').filter({ hasText: 'Officer unlocked (10 badges)' }).click();
     await page.locator('#currentStar').selectOption('0');
@@ -82,12 +87,11 @@ try {
     check('Epic fifth skill unlocks after all four primary skills reach level 10', /Fifth Skill: UNLOCKED/.test(await page.locator('#skillGrid .fifth-skill-status').innerText()));
   } else check('Epic Evelyn is present', false);
 
-  const legendary = await page.locator('#officerSelect option').evaluateAll(opts => opts.find(o => /S8 Po/i.test(o.textContent))?.value);
+  const legendary = await selectOfficerForSkills('S8 Po');
   if (legendary !== undefined) {
-    await page.locator('#officerSelect').selectOption(legendary);
     check('Legendary skill badge total is 690', /690 Officer Badges total/.test(await page.locator('#skillSequenceNotice').innerText()));
   } else check('Legendary S8 Po is present', false);
-  await page.locator('#officerSelect').selectOption(marjorie);
+  await selectOfficerForSkills('Marjorie');
   check('Elite skill badge total is 340', /340 Officer Badges total/.test(await page.locator('#skillSequenceNotice').innerText()));
 
   // Independent Officer profiles and shared-resource persistence.
@@ -129,12 +133,14 @@ try {
   await page.locator('#maxOfficerProfile').click();
   await page.waitForTimeout(150);
   check('MAX sets level 70 and five stars', await page.locator('#currentLevel').inputValue() === '70' && await page.locator('#currentStar').inputValue() === '5');
+  await page.locator('[data-view="development"]').click();
   check('MAX unlocks Officer and completes four primary skills',
     await page.locator('#unlocked').isChecked() &&
     await page.locator('#skillGrid .skill-strand-row:not(.fifth-skill-status)').count() === 4 &&
     await page.locator('#skillGrid .skill-strand-row:not(.fifth-skill-status) button.skill-lvl.reached').count() === 40);
   check('MAX sets training to 180', await page.locator('#trainingExact').inputValue() === '180');
   check('MAX leaves shared ORV inventory untouched', await page.locator('#orvHeld').inputValue() === '4321');
+  await page.locator('[data-view="officer"]').click();
   await page.locator('#resetOfficerProfile').click();
   await page.waitForTimeout(150);
   check('Reset clears only the selected Officer progress', await page.locator('#currentLevel').inputValue() === '1' && await page.locator('#currentStar').inputValue() === '0' && /Not saved yet/i.test(await page.locator('#profileSavedStatus').innerText()));
