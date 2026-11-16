@@ -361,6 +361,74 @@ try {
     await edgeRow.locator('[data-multi-allocated]').innerText() === '1 / 1' &&
     await edgeRow.locator('[data-multi-status]').innerText() === 'Fully Funded');
   await page.evaluate(() => localStorage.removeItem('kow_central_inventory_v1'));
+  // Mixed-resource allocation audit: individual badges, Officer-specific Selection
+  // Chests, ORV and Universal Badges must each be consumed once and in the right order.
+  const clearMixedPlannerRows = async () => {
+    while (await page.locator('#multiPlannerRows tr').count()) {
+      await page.locator('#multiPlannerRows tr').first().locator('[data-remove]').click();
+    }
+  };
+  const addMixedPlannerRow = async (name, needed) => {
+    await page.locator('#multiAddOfficer').click();
+    const row = page.locator('#multiPlannerRows tr').last();
+    await row.locator('[data-multi-officer]').selectOption({ label: name });
+    await row.locator('[data-multi-needed]').fill(String(needed));
+    return row;
+  };
+  await page.evaluate(() => localStorage.setItem('kow_central_inventory_v1',
+    JSON.stringify({ officerBadges: { 'S8 Po': 1 } })));
+  await clearMixedPlannerRows();
+  const mixedPo = await addMixedPlannerRow('S8 Po', 2);
+  const mixedKatherine = await addMixedPlannerRow('Katherine', 2);
+  const mixedSara = await addMixedPlannerRow('S8 Sara', 1);
+  await page.locator('#multiOrv').fill('720');
+  await page.locator('#multiUniversal').fill('2');
+  await page.locator('#multiChests').fill('0');
+  await page.locator('#multiSelectionChests').fill('1');
+  await page.locator('#multiChestMode').selectOption('badge');
+  await page.waitForTimeout(120);
+  check('Mixed allocation applies the individual Officer Badge before shared resources',
+    await mixedPo.locator('[data-multi-held]').innerText() === '1' &&
+    await mixedPo.locator('[data-multi-allocated]').innerText() === '1 / 1' &&
+    await mixedPo.locator('[data-multi-status]').innerText() === 'Fully Funded');
+  check('Mixed allocation reserves the Selection Chest for its named eligible Officer',
+    await mixedKatherine.locator('[data-multi-allocated]').innerText() === '2 / 2' &&
+    await mixedKatherine.locator('[data-multi-status]').innerText() === 'Fully Funded');
+  check('Mixed allocation uses ORV and then Universal Badges without double-counting',
+    await mixedSara.locator('[data-multi-allocated]').innerText() === '1 / 1' &&
+    await mixedSara.locator('[data-multi-status]').innerText() === 'Fully Funded' &&
+    /0 ORV · 0 Universal Badges · 0 Selection Chests/.test(await page.locator('#multiPlannerSummary').innerText()),
+    await page.locator('#multiPlannerSummary').innerText());
+
+  // Universal Badges must cover an eligible Officer's residual need after ORV.
+  await clearMixedPlannerRows();
+  const mixedTopUp = await addMixedPlannerRow('S8 Sara', 2);
+  await page.locator('#multiOrv').fill('720');
+  await page.locator('#multiUniversal').fill('1');
+  await page.locator('#multiChests').fill('0');
+  await page.locator('#multiSelectionChests').fill('0');
+  await page.locator('#multiChestMode').selectOption('badge');
+  await page.waitForTimeout(100);
+  check('Universal Badge tops up the remaining eligible-Officer shortfall after ORV',
+    await mixedTopUp.locator('[data-multi-allocated]').innerText() === '2 / 2' &&
+    await mixedTopUp.locator('[data-multi-status]').innerText() === 'Fully Funded');
+
+  // The automatic chest strategy must compare whole-badge coverage, not just
+  // the nominal ORV value: 720 ORV funds two S7 Code badges at 346 each.
+  await clearMixedPlannerRows();
+  const chestOptimise = await addMixedPlannerRow('S7 Code', 2);
+  await page.locator('#multiOrv').fill('0');
+  await page.locator('#multiUniversal').fill('0');
+  await page.locator('#multiChests').fill('1');
+  await page.locator('#multiSelectionChests').fill('0');
+  await page.locator('#multiChestMode').selectOption('optimise');
+  await page.waitForTimeout(100);
+  check('Automatic chest strategy converts to ORV when it funds more whole badges',
+    await chestOptimise.locator('[data-multi-allocated]').innerText() === '2 / 2' &&
+    /Optimised: convert Badge Chests to ORV/.test(await page.locator('#multiPlannerSummary').innerText()),
+    await page.locator('#multiPlannerSummary').innerText());
+  await page.evaluate(() => localStorage.removeItem('kow_central_inventory_v1'));
+
 
   // Advanced Multi-Officer Planning: saved progress and future release placeholders.
   // The season selector must follow the actual officer dataset, including newly added seasons.
