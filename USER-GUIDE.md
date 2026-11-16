@@ -1,7 +1,7 @@
-# KoW Companion — User Guide
+# Officer Command Centre — User Guide
 ## Version 4.7.0 — Current application guide
 
-KoW Companion helps plan, track and forecast Officer development in *Kiss of War*. It combines Officer progress, shared Inventory, upgrade calculations, multi-Officer planning, future release forecasting and backup tools.
+Officer Command Centre helps plan, track and forecast Officer development in *Kiss of War*. It combines Officer progress, shared Inventory, upgrade calculations, multi-Officer planning, future release forecasting and backup tools.
 
 ## Recommended Workflow
 1. **Inventory** — enter and save all resources currently held.
@@ -15,14 +15,11 @@ KoW Companion helps plan, track and forecast Officer development in *Kiss of War
 9. **Releases** — review the recurring release calendar and future Officer cost forecasts.
 10. **Backup** — periodically export an App Backup.
 
-# What's New in v4.6.0
-- **Upgrade Targets & Recommendations**
-- **Dynamic Officer Data**
-- **Global Officer Data information**
-- **Database-driven Future Officer Cost Forecasting**
-- Improved future Officer planning
-- Working-state persistence retained across normal browser refreshes
-- Existing v4.5.0 planning, Inventory and backup functionality retained
+# What's New in v4.7.0
+- Continues the v4.6.0 features: **Upgrade Targets & Recommendations**, **Dynamic Officer Data**, **Global Officer Data information** and **Database-driven Future Officer Cost Forecasting**.
+- Confirms the October 2026 S8 Rally / Garrison Officer data baseline at 720 ORV / 360 SRV.
+- Retains working-state persistence, planning, Inventory, Progress, Compare and Backup & Restore functionality.
+- The current Development-only Officer Database editor adds editable Rarity and Role fields and safer CSV import/export. These editor improvements are not a production release and are not yet promoted to Test or Live.
 
 # Upgrade Targets & Recommendations
 The Upgrade Targets system provides a non-destructive way to calculate what remains between an Officer's current saved position and a chosen target. Targets can include Officer Level, Star Level, Training Level or MAX Officer.
@@ -30,7 +27,7 @@ The Upgrade Targets system provides a non-destructive way to calculate what rema
 **MAX Officer** represents 5 Stars, Level 70, Officer Unlocked, all four Skill Strands at Level 10 and Training Level 180. The fifth Skill Strand unlocks only after the first four reach Level 10, and only for Officer types that have a fifth Skill Strand. Calculating a target does not spend resources or deduct anything from Central Inventory.
 
 # Dynamic Officer Data
-Version 4.6.0 separates published Officer release data from the main application logic. Published Officer data includes Officer name, Season, rarity, role/type, ORV cost, SRV cost, readiness eligibility and associated application data. The current published dataset can be checked from **Settings → Global Officer Data**.
+The v4.7.0 application separates published Officer release data from the main application logic. Published Officer data includes Officer name, Season, rarity, role/type, ORV cost, SRV cost, readiness eligibility and associated application data. The current published dataset can be checked from **Settings → Global Officer Data**.
 
 New Officer releases should first be added and validated in the Test environment before being promoted to Live.
 
@@ -124,13 +121,17 @@ A normal browser refresh preserves important working selections, including selec
 The Releases section displays the recurring annual Officer cycle and automatically identifies the current period and next scheduled release. The sequence is **October Rally/Garrison → January Infantry → April Tanks → July Tank Destroyers**, then repeats for the next Season.
 
 # Officer Database
-The Officer Database controls the Officer master list. It supports search, Season filtering, adding/editing/deleting Officers, CSV export/import and restoring the published defaults. New confirmed releases should be tested before being incorporated into the Live dataset. Adding a newer confirmed Legendary seasonal release can automatically advance the Future Officer Cost Forecast baseline.
+The Officer Database controls the Officer master list. It supports search, Season filtering, adding, editing, copying and deleting Officers, CSV export/import and restoring the published defaults. The editor exposes **Officer Name, Season, Rarity, Role, ORV per Badge, SRV per Exclusive Star and Notes**. Rarity options are Legendary, Epic and Elite; Role is a free-text field for the Officer's role/type.
+
+CSV export includes all seven fields. CSV import accepts quoted commas, escaped double quotes and line breaks within quoted fields. The required headers are Officer Name, Season, ORV per Badge and SRV per Exclusive Star. Older CSV files that do not contain Rarity or Role remain compatible; imported records default to Legendary rarity and a blank Role. Review the import validation report and confirm replacement before the local Officer database is overwritten.
+
+New confirmed releases should be tested before being incorporated into the Live dataset. Adding a newer confirmed Legendary seasonal release can automatically advance the Future Officer Cost Forecast baseline.
 
 # Backup & Restore
-Use **Settings → Export App Backup** to create a portable backup of locally stored KoW Companion data. A known-good backup should be retained before major changes. After restoring, confirm that the restored information remains present after reloading the application.
+Use **Settings → Export App Backup** to create a portable backup of locally stored Officer Command Centre data. A known-good backup should be retained before major changes. After restoring, confirm that the restored information remains present after reloading the application.
 
 # Important Planning Principle
-KoW Companion separates **confirmed data** from **forecast data**. Confirmed Officer costs in the published Officer Database are treated as known information. Future costs generated by forecasting tools are estimates. When an Officer is officially released and actual costs become known, the confirmed values should replace forecast assumptions.
+Officer Command Centre separates **confirmed data** from **forecast data**. Confirmed Officer costs in the published Officer Database are treated as known information. Future costs generated by forecasting tools are estimates. When an Officer is officially released and actual costs become known, the confirmed values should replace forecast assumptions.
 
 ---
 **Officer Command Centre**
