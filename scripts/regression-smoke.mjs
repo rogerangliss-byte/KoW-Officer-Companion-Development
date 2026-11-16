@@ -1165,6 +1165,9 @@ try {
     /1 Selection Chests/.test(await page.locator('#multiPlannerSummary').innerText()),
     await page.locator('#multiPlannerSummary').innerText());
 
+  // Restore the untouched not-started profiles after the Single-Officer UI checks, which auto-save progress.
+  await page.evaluate(profiles => localStorage.setItem('kow_officer_profiles_v435', JSON.stringify(profiles)), mixedRarityProfiles);
+
   // Advanced Planner: saved progress must use the same rarity-specific maximums.
   await page.locator('#kowPlannerSession').selectOption('saved');
   await page.locator('#kowPlannerSeasonFilter').selectOption('all');
