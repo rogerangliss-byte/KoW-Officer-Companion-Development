@@ -258,12 +258,12 @@ try {
   await page.locator('#currentStar').selectOption('5');
   await page.locator('#targetStar').selectOption('5');
   await page.locator('[data-view="development"]').click();
+  await page.locator('#unlocked').check();
+  await page.waitForTimeout(100);
   for (let strand = 0; strand < 4; strand++) {
     await page.locator('#skillGrid .skill-strand-row:not(.fifth-skill-status)').nth(strand).locator('button.skill-lvl').first().click();
   }
-  await page.locator('#trainingExact').fill('0');
   await page.locator('#badgeHeld').fill('0');
-  await page.locator('#unlocked').check();
   await page.waitForTimeout(100);
   check('Single-Officer unlock adds exactly 10 badges to the requirement', await page.locator('#badgesUsed').innerText().then(v => Number(v.replace(/[^0-9]/g,'')) === 10));
   check('Single-Officer training is locked until all four primary skills are complete', await page.locator('#trainingExact').isDisabled());
@@ -302,6 +302,7 @@ try {
     'used=' + await page.locator('#badgesUsed').innerText() + ', required=' + await page.locator('#badgesRequired').innerText());
 
   // Verify whole-badge ORV handling, individual and universal badges, and mutually exclusive chest use.
+  await page.locator('#trainingExact').fill('0');
   for (let strand = 0; strand < 4; strand++) {
     await page.locator('#skillGrid .skill-strand-row:not(.fifth-skill-status)').nth(strand).locator('button.skill-lvl').first().click();
   }
