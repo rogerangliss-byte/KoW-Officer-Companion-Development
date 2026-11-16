@@ -315,12 +315,18 @@ try {
   check('Single-Officer ORV counts only whole badges and preserves the 719 remainder',
     await page.locator('#badgesFromOrv').innerText().then(v => Number(v.replace(/[^0-9]/g,'')) === 1) &&
     await page.locator('#orvRemainder').innerText().then(v => Number(v.replace(/[^0-9]/g,'')) === 719));
-  check('Single-Officer counts individual, universal and eligible selection badges separately',
-    await page.locator('#universalBadgesAvailable').innerText().then(v => Number(v.replace(/[^0-9]/g,'')) === 2));
+  check('Single-Officer excludes the Original-only Selection Chest from ineligible S8 Po',
+    await page.locator('#universalBadgesAvailable').innerText().then(v => Number(v.replace(/[^0-9]/g,'')) === 1));
   await page.locator('#legendaryBadgeChestMode').selectOption('badge');
   await page.waitForTimeout(100);
-  check('Single-Officer badge chest is not double-counted as ORV and a Universal Badge',
+  check('Single-Officer badge chest is counted once and not also converted to ORV',
     await page.locator('#selectionChestOrvGenerated').innerText().then(v => Number(v.replace(/[^0-9]/g,'')) === 0) &&
+    await page.locator('#universalBadgesAvailable').innerText().then(v => Number(v.replace(/[^0-9]/g,'')) === 2));
+  await page.locator('[data-view="officer"]').click();
+  await page.locator('#officerSelect').selectOption({ label: 'Katherine' });
+  await page.locator('[data-view="development"]').click();
+  await page.waitForTimeout(100);
+  check('Single-Officer applies the Selection Chest to a specifically eligible Original Officer',
     await page.locator('#universalBadgesAvailable').innerText().then(v => Number(v.replace(/[^0-9]/g,'')) === 3));
 
   // Legendary SRV converts only in whole 360-SRV Exclusive Star units.
@@ -359,15 +365,15 @@ try {
     Number((await page.locator('#xpRequired').innerText()).replace(/[^0-9]/g,'')) === 0 &&
     Number((await page.locator('#xpShortfall').innerText()).replace(/[^0-9]/g,'')) === 0);
 
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await page.waitForFunction(() => document.querySelectorAll('#officerSelect option').length === 68);
+  await page.waitForTimeout(350);
   await page.evaluate(state => {
     if (state.profiles === null) localStorage.removeItem('kow_officer_profiles_v435');
     else localStorage.setItem('kow_officer_profiles_v435', state.profiles);
     if (state.resources === null) localStorage.removeItem('kow_global_resources_v435');
     else localStorage.setItem('kow_global_resources_v435', state.resources);
   }, singleOfficerAuditState);
-  await page.reload({ waitUntil: 'domcontentloaded' });
-  await page.waitForFunction(() => document.querySelectorAll('#officerSelect option').length === 68);
-  await page.waitForTimeout(350);
   check('Single-Officer audit restores the original saved profile and resource fixtures',
     await page.evaluate(state => localStorage.getItem('kow_officer_profiles_v435') === state.profiles &&
       localStorage.getItem('kow_global_resources_v435') === state.resources, singleOfficerAuditState));
