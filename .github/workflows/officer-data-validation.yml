@@ -1,0 +1,45 @@
+name: Officer data validation
+
+on:
+  push:
+    branches:
+      - main
+      - feature/**
+    paths:
+      - 'officers.json'
+      - 'officers.csv'
+      - 'officers-default.json'
+      - 'officers-default.csv'
+      - 'officer-data-version.json'
+      - 'officer-portraits/**'
+      - 'index.html'
+      - 'scripts/validate-officer-data.mjs'
+      - '.github/workflows/officer-data-validation.yml'
+  pull_request:
+    paths:
+      - 'officers.json'
+      - 'officers.csv'
+      - 'officers-default.json'
+      - 'officers-default.csv'
+      - 'officer-data-version.json'
+      - 'officer-portraits/**'
+      - 'index.html'
+      - 'scripts/validate-officer-data.mjs'
+      - '.github/workflows/officer-data-validation.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  validate-officer-data:
+    name: Validate officer data, CSV exports and portraits
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Run officer data validation
+        run: node scripts/validate-officer-data.mjs
