@@ -3,7 +3,7 @@
 **Audit date:** 16 November 2026  
 **Repository:** `rogerangliss-byte/KoW-Officer-Companion-Development`  
 **Branch:** `feature/officer-data-validation`  
-**Audited commit:** `48ec2edcf289c6d55a082f2147f846d045942031`  
+**Audited commit:** `df1d883141d37044aa94add422f12c1df5b222ac`  
 **Application version:** `4.7.0`  
 **Officer data version:** `2026.11.14-01`
 
@@ -47,6 +47,14 @@ The full Officer database and seasonal defaults are separate datasets and are no
 - Result: **2,036 checks passed, 0 errors**
 - The validator checks Officer data, CSV exports and portrait correspondence. The audited data manifest and datasets are recorded above.
 
+## Officer Database editor enhancement — 16 November 2026
+
+The current Development commit adds editable Rarity and Role fields to the Officer Database editor and includes both fields in CSV import/export. CSV import now handles quoted commas, escaped quotes, embedded line breaks and CRLF/LF endings; it checks required headers, validates imported data, asks for confirmation before replacing the local database and reports file-read errors. Older CSV files without Rarity or Role remain compatible.
+
+- Browser regression workflow: [43958525071](https://github.com/rogerangliss-byte/KoW-Officer-Companion-Development/actions/runs/43958525071) — **161 passed, 0 failed**.
+- Officer-data validation workflow: [43958525148](https://github.com/rogerangliss-byte/KoW-Officer-Companion-Development/actions/runs/43958525148) — **completed successfully**.
+- The enhancement does not change skill costs, calculator logic, Officer datasets, runtime application version or deployment configuration.
+
 ## Version and release controls
 
 - Keep the application version at **v4.7.0** for this Development validation cycle.
@@ -58,6 +66,6 @@ The full Officer database and seasonal defaults are separate datasets and are no
 
 ## Outstanding release gates
 
-The documentation/version mismatch identified in the 16 November audit is resolved by aligning the changelog and this readiness record with the existing v4.7.0 runtime identity. This does **not** mean a new production release has been approved.
+The documentation/version mismatch identified in the 16 November audit is resolved: README, Changelog, User Guide and this readiness record consistently identify v4.7.0 as the current application baseline. The User Guide's What's New section now identifies v4.7.0, and the Officer Database editor enhancement is documented as Development-only. This does **not** mean a new production release has been approved.
 
 Before any future promotion, run the relevant target-environment checks against the exact candidate commit, verify language-specific assets and translations in the Multilingual repositories, confirm target CNAME and deployment configuration, and obtain explicit approval for the named destination repository.
