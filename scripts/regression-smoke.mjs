@@ -39,8 +39,9 @@ try {
   if (marjorie !== undefined) {
     await page.locator('#officerSelect').selectOption(marjorie);
     const skillText = await page.locator('#skillGrid').innerText();
-    check('Elite Marjorie has four primary skill strands and no fifth', !/fifth skill/i.test(skillText) && (await page.locator('#skillGrid .skill-strand, #skillGrid .skill-card').count()) <= 4,
-      skillText.slice(0, 180));
+    const skillRows = await page.locator('#skillGrid .skill-strand-row').count();
+    check('Elite Marjorie has exactly four primary skill strands and no fifth', skillRows === 4 && !/Skill 5|Fifth Skill Strand/i.test(skillText),
+      `found ${skillRows} skill rows; ${skillText.slice(0, 140)}`);
   } else check('Elite Marjorie is present', false);
 
   // Inventory save / restore in this isolated browser profile only.
@@ -54,15 +55,18 @@ try {
   }));
 
   // Star calculator accepts level changes and emits a numeric result.
+  await page.locator('[data-view="officer"]').click();
+  await page.locator('#officerSelect').selectOption({ label: 'S8 Po' });
   await page.locator('[data-view="stars"]').click();
+  await page.locator('#legendaryStarInventory').waitFor({ state: 'visible' });
   await page.locator('#currentStar').selectOption('0');
   await page.locator('#targetStar').selectOption('5');
   await page.locator('#ls1').fill('1');
   await page.locator('#ls2').fill('1');
   await page.locator('#ls3').fill('1');
   await page.waitForTimeout(300);
-  const starOutput = await page.locator('#starRequired, #starsRequired, #starShortfall, #starResult').evaluateAll(es => es.map(e => e.textContent || e.value).join(' '));
-  check('Star calculator renders a result', starOutput.trim().length > 0, starOutput.slice(0, 120));
+  const starOutput = await page.locator('#starsRequired').innerText();
+  check('Star calculator renders a numeric requirement', /[0-9]/.test(starOutput), starOutput.slice(0, 120));
 
   // Development skills and training controls.
   await page.locator('[data-view="development"]').click();
