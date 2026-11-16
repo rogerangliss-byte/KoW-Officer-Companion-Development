@@ -698,7 +698,7 @@ try {
   await page.locator('#advancedMultiOfficerPlanning button[onclick="kowRunAdvancedPlanner()"]').click();
   await page.waitForTimeout(100);
   check('Advanced Planner test fixtures are restored after the persistence audit',
-    JSON.parse(await page.evaluate(() => localStorage.getItem('kow_officer_profiles_v435') || '{}'))['S8|S8 Sara']?.skills?.filter(Boolean).length === 8);
+    await page.evaluate(previous => localStorage.getItem('kow_officer_profiles_v435') === previous, plannerFixture));
 
   await page.locator('#kowPlannerSession').selectOption('january');
   await page.locator('#advancedMultiOfficerPlanning button[onclick="kowRunAdvancedPlanner()"]').click();
