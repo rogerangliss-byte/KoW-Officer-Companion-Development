@@ -46,6 +46,18 @@ try {
     await page.locator('[data-view="officer"]').click();
     const value = await page.locator('#officerSelect option').evaluateAll(opts => opts.find(o => new RegExp(name, 'i').test(o.textContent))?.value);
     if (value === undefined) throw new Error('Officer not found: ' + name);
+    await page.evaluate(() => {
+      const select = document.querySelector('#officerSelect');
+      window.__officerSelectionTrace = [];
+      if (select) select.addEventListener('change', () => {
+        window.__officerSelectionTrace.push({
+          value: select.value,
+          optionText: select.options[select.selectedIndex]?.textContent?.trim() ?? null,
+          rarity: document.querySelector('#officerRarityValue')?.textContent?.trim() ?? null,
+          timestamp: performance.now()
+        });
+      });
+    });
     await page.locator('#officerSelect').selectOption(value);
     await page.waitForFunction(expected => document.querySelector('#officerSelect')?.value === expected, value);
     await page.waitForFunction(expected => {
@@ -257,6 +269,9 @@ try {
       return {
         selectedValue: select?.value ?? null,
         selectedOptionText: option?.textContent?.trim() ?? null,
+        optionsContainingMarjorie: [...(select?.options || [])].filter(o => /marjorie/i.test(o.textContent)).map(o => ({value:o.value,text:o.textContent.trim()})),
+        optionCount: select?.options?.length ?? null,
+        selectionChangeTrace: window.__officerSelectionTrace || [],
         selectedOptionHtml: option?.outerHTML ?? null,
         publishedOfficerAtIndex: Number.isInteger(index) ? published[index] ?? null : null,
         displayedRarity: document.querySelector('#officerRarityValue')?.textContent?.trim() ?? null,
