@@ -43,8 +43,9 @@ English Live is the authoritative production baseline. This repository is for is
 ## Current validation status
 
 The 16 November 2026 integrated audit is recorded in `DEVELOPMENT-READINESS-v4.7.0.md`:
-- Browser regression: 161 passed, 0 failed.
-- Officer data validation: 2,036 checks passed, 0 errors.
+- Browser regression on the current Officer Database editor commit: 161 passed, 0 failed (run `43958525071`).
+- Officer data validation on the current editor commit: completed successfully (run `43958525148`).
+- The Officer Database editor now exposes Rarity and Role, exports/imports these fields in CSV, and uses a quoted-field-aware CSV parser.
 - Officer database: 68 records; seasonal defaults: 46 records; portraits: 68 files.
 
 The runtime application and supporting production files were synchronized from English Live on 16 November 2026. The production custom-domain file is intentionally excluded.
