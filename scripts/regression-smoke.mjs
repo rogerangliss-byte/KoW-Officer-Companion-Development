@@ -379,6 +379,73 @@ try {
   check('Advanced Planner analyses saved Officer progress',
     (await page.locator('#kowAdvancedPlannerResults tbody tr').count()) >= 1,
     (await page.locator('#kowAdvancedPlannerSummary').innerText()).slice(0, 220));
+
+  // Advanced Planner mixed-progress audit. Use isolated saved profiles so the
+  // result is deterministic and exercises partially completed skill strands.
+  const plannerFixture = await page.evaluate(() => {
+    const key = 'kow_officer_profiles_v435';
+    const previous = localStorage.getItem(key);
+    const skills = count => Array.from({ length: 36 }, (_, i) => i < count);
+    const profiles = {
+      'S8|S8 Po': {
+        unlocked: true, skills: skills(20), training: 0,
+        currentStar: 2, currentLevel: 30, badgeHeld: 0, savedAt: '2026-11-16T00:00:00.000Z'
+      },
+      'S8|S8 Sara': {
+        unlocked: true, skills: skills(8), training: 0,
+        currentStar: 1, currentLevel: 15, badgeHeld: 0, savedAt: '2026-11-16T00:00:00.000Z'
+      }
+    };
+    localStorage.setItem(key, JSON.stringify(profiles));
+    return previous;
+  });
+  await page.locator('#kowPlannerSeasonFilter').selectOption('S8');
+  await page.locator('#kowPlannerSession').selectOption('saved');
+  await page.locator('#kowFutureOfficerType').selectOption('auto');
+  await page.locator('#kowPlannerIncludeNotStarted').uncheck();
+  await page.locator('#kowPlannerIncludeOriginals').uncheck();
+  await page.locator('#orvHeld').fill('719');
+  await page.locator('#universalBadgeHeld').fill('0');
+  await page.locator('#legendaryBadgeChestHeld').fill('0');
+  await page.locator('#legendarySelectionChestHeld').fill('0');
+  await page.locator('#advancedMultiOfficerPlanning button[onclick="kowRunAdvancedPlanner()"]').click();
+  await page.waitForTimeout(100);
+  let plannerRows = page.locator('#kowAdvancedPlannerResults tbody tr');
+  let plannerCells = await plannerRows.evaluateAll(rows => rows.map(row =>
+    Array.from(row.querySelectorAll('td')).map(cell => cell.innerText.trim())));
+  check('Advanced Planner isolates saved S8 Officers for mixed-progress analysis',
+    plannerCells.length === 2 && plannerCells.every(row => /S8 Po|S8 Sara/.test(row[1])),
+    JSON.stringify(plannerCells));
+  check('Advanced Planner ranks the more-developed partially skilled Officer first',
+    plannerCells[0]?.[1] === 'S8 Po' && plannerCells[0]?.[3].includes('IN PROGRESS'),
+    JSON.stringify(plannerCells.slice(0, 2)));
+  check('Advanced Planner recognises partial skill development without marking either Officer MAXED',
+    plannerCells.length === 2 && plannerCells.every(row => row[3].includes('IN PROGRESS')),
+    JSON.stringify(plannerCells.map(row => row[3])));
+  check('Advanced Planner identifies the sub-threshold ORV shortage in its inventory snapshot',
+    /ORV 719/.test(await page.locator('#kowAdvancedPlannerResults').innerText()));
+  check('Advanced Planner gives the no-funded-ORV recommendation below the 720 threshold',
+    plannerCells.every(row => row[4].includes('Use Officer-specific badges first.')),
+    JSON.stringify(plannerCells.map(row => row[4])));
+  await page.locator('#orvHeld').fill('720');
+  await page.locator('#advancedMultiOfficerPlanning button[onclick="kowRunAdvancedPlanner()"]').click();
+  plannerRows = page.locator('#kowAdvancedPlannerResults tbody tr');
+  plannerCells = await plannerRows.evaluateAll(rows => rows.map(row =>
+    Array.from(row.querySelectorAll('td')).map(cell => cell.innerText.trim())));
+  check('Advanced Planner changes its recommendation when ORV reaches exactly one badge',
+    plannerCells.every(row => row[4].includes('then ORV where eligible')),
+    JSON.stringify(plannerCells.map(row => row[4])));
+  await page.locator('#orvHeld').fill('0');
+  await page.locator('#universalBadgeHeld').fill('1');
+  await page.locator('#advancedMultiOfficerPlanning button[onclick="kowRunAdvancedPlanner()"]').click();
+  check('Advanced Planner reports shared Universal Badge inventory separately from ORV',
+    /ORV 0/.test(await page.locator('#kowAdvancedPlannerResults').innerText()) &&
+    /Universal Badges 1/.test(await page.locator('#kowAdvancedPlannerResults').innerText()));
+  await page.evaluate(previous => {
+    const key = 'kow_officer_profiles_v435';
+    if (previous === null) localStorage.removeItem(key);
+    else localStorage.setItem(key, previous);
+  }, plannerFixture);
   await page.locator('#kowPlannerSession').selectOption('january');
   await page.locator('#advancedMultiOfficerPlanning button[onclick="kowRunAdvancedPlanner()"]').click();
   check('Advanced Planner projects January as S8 Infantry',
