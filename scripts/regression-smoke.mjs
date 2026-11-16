@@ -42,28 +42,30 @@ try {
   check('S8 Po SRV rate is 360', await page.locator('#srvCost').inputValue() === '360');
 
   // Officer selection and skill controls live on separate views. Always select on Officer, then inspect Development.
-  const selectOfficerForSkills = async name => {
+  const selectOfficerForSkills = async (name, expectedRarity) => {
     await page.locator('[data-view="officer"]').click();
     const value = await page.locator('#officerSelect option').evaluateAll(opts => opts.find(o => new RegExp(name, 'i').test(o.textContent))?.value);
     if (value === undefined) throw new Error('Officer not found: ' + name);
     await page.locator('#officerSelect').selectOption(value);
     await page.waitForFunction(expected => document.querySelector('#officerSelect')?.value === expected, value);
-    await page.waitForFunction(() => {
-      const name = document.querySelector('#officerSelect option:checked')?.textContent?.trim();
+    await page.waitForFunction(expected => {
+      const selected = document.querySelector('#officerSelect option:checked')?.textContent?.trim();
       const dash = document.querySelector('#dashOfficer')?.textContent?.trim();
-      return !!name && (!dash || dash === name);
-    });
+      const rarity = document.querySelector('#officerRarityValue')?.textContent?.trim();
+      return !!selected && (!dash || dash === selected) && rarity === expected;
+    }, expectedRarity);
     await page.locator('[data-view="development"]').click();
-    await page.waitForFunction(() => {
+    await page.waitForFunction(expected => {
       const grid = document.querySelector('#skillGrid');
+      const status = grid?.querySelector('.fifth-skill-status')?.textContent || '';
       return !!grid && grid.querySelectorAll('.skill-strand-row:not(.fifth-skill-status)').length === 4 &&
-        !!grid.querySelector('.fifth-skill-status');
-    });
+        (expected === 'Elite' ? /Not available for Elite Officers/.test(status) : /Fifth Skill:/.test(status));
+    }, expectedRarity);
     return value;
   };
 
   // Confirm Elite does not expose a fifth skill.
-  const marjorie = await selectOfficerForSkills('Marjorie');
+  const marjorie = await selectOfficerForSkills('Marjorie', 'Elite');
   if (marjorie !== undefined) {
     const skillRows = await page.locator('#skillGrid .skill-strand-row:not(.fifth-skill-status)').count();
     const fifthStatus = await page.locator('#skillGrid .fifth-skill-status').textContent();
@@ -73,7 +75,7 @@ try {
   } else check('Elite Marjorie is present', false);
 
   // Verify rarity-specific skill totals, star gates, and fifth-skill unlock behaviour.
-  const epic = await selectOfficerForSkills('Evelyn');
+  const epic = await selectOfficerForSkills('Evelyn', 'Epic');
   if (epic !== undefined) {
     await page.locator('#skillSequenceNotice').waitFor({ state: 'visible' });
     await page.waitForFunction(() => /Epic Skill Badge progression:\s*440 Officer Badges total/i.test(document.querySelector('#skillSequenceNotice')?.textContent || ''));
@@ -102,11 +104,11 @@ try {
     check('Epic fifth skill unlocks after all four primary skills reach level 10', /Fifth Skill: UNLOCKED/.test(await page.locator('#skillGrid .fifth-skill-status').innerText()));
   } else check('Epic Evelyn is present', false);
 
-  const legendary = await selectOfficerForSkills('S8 Po');
+  const legendary = await selectOfficerForSkills('S8 Po', 'Legendary');
   if (legendary !== undefined) {
     check('Legendary skill badge total is 690', /690 Officer Badges total/.test(await page.locator('#skillSequenceNotice').innerText()));
   } else check('Legendary S8 Po is present', false);
-  await selectOfficerForSkills('Marjorie');
+  await selectOfficerForSkills('Marjorie', 'Elite');
   check('Elite skill badge total is 340', /340 Officer Badges total/.test(await page.locator('#skillSequenceNotice').innerText()));
 
   // Independent Officer profiles and shared-resource persistence.
