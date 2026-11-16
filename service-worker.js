@@ -1,4 +1,4 @@
-const CACHE='occ-enhancement-v4.7.0-20261116-r1';
+const CACHE='occ-enhancement-v4.7.0-20261116-r2';
 self.addEventListener('install',event=>{self.skipWaiting();});
 self.addEventListener('activate',event=>{
   event.waitUntil(
