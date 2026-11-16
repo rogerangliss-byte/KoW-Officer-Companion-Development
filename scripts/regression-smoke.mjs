@@ -55,10 +55,11 @@ try {
 
   // Independent Officer profiles and shared-resource persistence.
   page.on('dialog', dialog => dialog.accept());
+  await page.locator('[data-view="officer"]').click();
+  await page.locator('#officerSelect').selectOption({ label: 'S8 Po' });
   await page.locator('[data-view="development"]').click();
   await page.locator('#orvHeld').fill('4321');
   await page.locator('[data-view="officer"]').click();
-  await page.locator('#officerSelect').selectOption({ label: 'S8 Po' });
   await page.locator('#quickProgressBtn').click();
   await page.locator('#quickOfficerLevel').fill('2');
   await page.locator('#quickStarLevel').selectOption('1');
