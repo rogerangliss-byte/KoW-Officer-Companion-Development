@@ -302,11 +302,7 @@ try {
     'used=' + await page.locator('#badgesUsed').innerText() + ', required=' + await page.locator('#badgesRequired').innerText());
 
   // Verify whole-badge ORV handling, individual and universal badges, and mutually exclusive chest use.
-  await page.locator('#trainingExact').fill('0');
-  for (let strand = 0; strand < 4; strand++) {
-    await page.locator('#skillGrid .skill-strand-row:not(.fifth-skill-status)').nth(strand).locator('button.skill-lvl').first().click();
-  }
-  await page.locator('#trainingExact').fill('0');
+  // Keep the Officer MAXED here: resource availability is calculated independently of remaining need.
   await page.locator('#badgeHeld').fill('1');
   await page.locator('#universalBadgeHeld').fill('1');
   await page.locator('#legendaryBadgeChestHeld').fill('1');
