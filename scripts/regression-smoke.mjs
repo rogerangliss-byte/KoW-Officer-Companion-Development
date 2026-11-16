@@ -44,8 +44,14 @@ try {
   // Officer selection and skill controls live on separate views. Always select on Officer, then inspect Development.
   const selectOfficerForSkills = async (name, expectedRarity) => {
     await page.locator('[data-view="officer"]').click();
-    const value = await page.locator('#officerSelect option').evaluateAll(opts => opts.find(o => new RegExp(name, 'i').test(o.textContent))?.value);
-    if (value === undefined) throw new Error('Officer not found: ' + name);
+    const officerSelect = page.locator('#officerSelect');
+    const selectionResult = await officerSelect.selectOption({ label: name });
+    const selectedValue = await officerSelect.inputValue();
+    const selectedText = await officerSelect.locator('option:checked').textContent();
+    if (!selectedText || selectedText.trim() !== name) {
+      throw new Error('Officer selection mismatch for ' + name +
+        '; selected value ' + selectedValue + ', selected text ' + (selectedText || '<none>'));
+    }
     await page.evaluate(() => {
       const select = document.querySelector('#officerSelect');
       window.__officerSelectionTrace = [];
@@ -58,28 +64,13 @@ try {
         });
       });
     });
-    const officerSelect = page.locator('#officerSelect');
-    const optionState = await officerSelect.locator('option').evaluateAll((opts, targetValue) => {
-      const match = opts.find(o => o.value === targetValue);
-      return {
-        selectDisabled: document.querySelector('#officerSelect')?.disabled ?? null,
-        selectedBefore: document.querySelector('#officerSelect')?.value ?? null,
-        targetFound: !!match,
-        targetDisabled: match?.disabled ?? null,
-        targetText: match?.textContent?.trim() ?? null
-      };
-    }, value);
-    const selectionResult = await officerSelect.selectOption({ label: name });
-    const selectionAfter = await officerSelect.inputValue();
-    console.log('Officer selection diagnostic:', JSON.stringify({
-      officer: name, expectedValue: value, selectionResult,
-      selectionAfter, optionState
+    console.log('Officer selection confirmed:', JSON.stringify({
+      officer: name, selectedValue, selectedText: selectedText.trim(), selectionResult
     }));
-    if (selectionAfter !== value) {
-      throw new Error('Playwright selectOption did not select ' + name +
-        '; expected value ' + value + ', got ' + selectionAfter);
-    }
-    await page.waitForFunction(expected => document.querySelector('#officerSelect')?.value === expected, value);
+    await page.waitForFunction(expected => {
+      const selected = document.querySelector('#officerSelect option:checked')?.textContent?.trim();
+      return selected === expected;
+    }, name);
     await page.waitForFunction(expected => {
       const selected = document.querySelector('#officerSelect option:checked')?.textContent?.trim();
       const rarity = document.querySelector('#officerRarityValue')?.textContent?.trim();
@@ -94,7 +85,7 @@ try {
       return !!grid && grid.querySelectorAll('.skill-strand-row:not(.fifth-skill-status)').length === 4 &&
         (expected === 'Elite' ? /Not available for Elite Officers/.test(status) : /Fifth Skill:/.test(status));
     }, expectedRarity);
-    return value;
+    return selectedValue;
   };
 
   // Confirm Elite does not expose a fifth skill.
