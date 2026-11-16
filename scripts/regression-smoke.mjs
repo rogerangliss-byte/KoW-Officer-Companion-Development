@@ -256,6 +256,79 @@ try {
   await page.locator('#saveScenario').click();
   check('Planning scenario can be saved', /Automated regression scenario/.test(await page.locator('#savedScenarioList').innerText()));
 
+  // Multi-Officer Planner: priority allocation, saved-plan round trip and deletion.
+  await page.locator('[data-view="planner"]').click();
+  await page.locator('#multiAddOfficer').click();
+  await page.locator('#multiAddOfficer').click();
+  const multiRows = page.locator('#multiPlannerRows tr');
+  check('Multi-Officer Planner adds two priority rows', await multiRows.count() === 2);
+  await multiRows.nth(0).locator('[data-multi-officer]').selectOption({ label: 'S8 Po' });
+  await multiRows.nth(0).locator('[data-multi-needed]').fill('1');
+  await multiRows.nth(1).locator('[data-multi-officer]').selectOption({ label: 'S8 Sara' });
+  await multiRows.nth(1).locator('[data-multi-needed]').fill('1');
+  await page.locator('#multiOrv').fill('720');
+  await page.locator('#multiUniversal').fill('0');
+  await page.locator('#multiChests').fill('0');
+  await page.locator('#multiSelectionChests').fill('0');
+  await page.locator('#multiChestMode').selectOption('orv');
+  await page.waitForTimeout(150);
+  check('Multi-Officer Planner allocates shared ORV to first priority only',
+    await multiRows.nth(0).locator('[data-multi-status]').innerText() === 'Fully Funded' &&
+    await multiRows.nth(1).locator('[data-multi-status]').innerText() === 'Shortfall',
+    'statuses=' + JSON.stringify(await multiRows.locator('[data-multi-status]').allInnerTexts()));
+  check('Multi-Officer Planner shows one badge allocated to priority one',
+    /1 \/ 1/.test(await multiRows.nth(0).locator('[data-multi-allocated]').innerText()),
+    await multiRows.nth(0).locator('[data-multi-allocated]').innerText());
+
+  await page.locator('#multiPlanName').fill('QA Multi Officer Plan');
+  await page.locator('#multiSavePlan').click();
+  check('Multi-Officer Planner saves named plan',
+    /QA Multi Officer Plan/.test(await page.locator('#multiSavedPlans').innerText()) &&
+    await page.evaluate(() => !!JSON.parse(localStorage.getItem('kow_multi_plans_v430') || '{}')['QA Multi Officer Plan']));
+  await page.locator('#multiOrv').fill('0');
+  await page.locator('#multiSavedPlans').selectOption({ label: 'QA Multi Officer Plan' });
+  check('Multi-Officer Planner restores saved resources and officer rows',
+    await page.locator('#multiOrv').inputValue() === '720' && await page.locator('#multiPlannerRows tr').count() === 2);
+  await page.locator('#multiDeletePlan').click();
+  check('Multi-Officer Planner deletes saved plan',
+    !/QA Multi Officer Plan/.test(await page.locator('#multiSavedPlans').innerText()) &&
+    !(await page.evaluate(() => !!JSON.parse(localStorage.getItem('kow_multi_plans_v430') || '{}')['QA Multi Officer Plan'])));
+
+  // Advanced Multi-Officer Planning: saved progress and future release placeholders.
+  await page.locator('#kowPlannerSession').selectOption('saved');
+  await page.locator('#kowPlannerSeasonFilter').selectOption('all');
+  await page.locator('#kowFutureOfficerType').selectOption('auto');
+  await page.locator('#advancedMultiOfficerPlanning button[onclick="kowRunAdvancedPlanner()"]').click();
+  await page.waitForTimeout(150);
+  check('Advanced Planner analyses saved Officer progress',
+    (await page.locator('#kowAdvancedPlannerResults tbody tr').count()) >= 1,
+    (await page.locator('#kowAdvancedPlannerSummary').innerText()).slice(0, 220));
+  await page.locator('#kowPlannerSession').selectOption('january');
+  await page.locator('#advancedMultiOfficerPlanning button[onclick="kowRunAdvancedPlanner()"]').click();
+  check('Advanced Planner projects January as S8 Infantry',
+    /S8 Infantry/.test(await page.locator('#kowAdvancedPlannerSummary').innerText()) &&
+    /S8 Infantry/.test(await page.locator('#kowAdvancedPlannerResults').innerText()));
+  await page.locator('#kowPlannerSession').selectOption('october');
+  await page.locator('#advancedMultiOfficerPlanning button[onclick="kowRunAdvancedPlanner()"]').click();
+  check('Advanced Planner projects October as S9 Rally and Garrison',
+    /S9 Rally/.test(await page.locator('#kowAdvancedPlannerResults').innerText()) &&
+    /S9 Garrison/.test(await page.locator('#kowAdvancedPlannerResults').innerText()));
+
+  // Future release forecast: verify the published S8 baseline and one-release growth.
+  await page.locator('[data-view="releases"]').click();
+  await page.locator('#forecastRelease').selectOption('1');
+  await page.locator('#forecastGrowth').fill('20');
+  await page.waitForTimeout(250);
+  check('January forecast compounds 20% from 720 ORV / 360 SRV baseline',
+    await page.locator('#forecastOrvPerBadge').innerText() === '864' &&
+    await page.locator('#forecastSrvPerStar').innerText() === '432',
+    'forecast=' + await page.locator('#forecastOrvPerBadge').innerText() + ' ORV / ' + await page.locator('#forecastSrvPerStar').innerText() + ' SRV');
+  await page.locator('#forecastGrowth').fill('0');
+  await page.waitForTimeout(200);
+  check('Zero-growth forecast retains confirmed 720 ORV / 360 SRV baseline',
+    await page.locator('#forecastOrvPerBadge').innerText() === '720' &&
+    await page.locator('#forecastSrvPerStar').innerText() === '360');
+
   // Database and release forecast.
   await page.locator('[data-view="database"]').click();
   check('Officer database table renders all records', await page.locator('#dbRows tr').count() === 68);
