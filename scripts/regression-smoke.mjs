@@ -400,9 +400,10 @@ try {
     await mixedKatherine.locator('[data-multi-status]').innerText() === 'Fully Funded',
     'allocated=' + await mixedKatherine.locator('[data-multi-allocated]').innerText() +
     '; status=' + await mixedKatherine.locator('[data-multi-status]').innerText());
-  check('Mixed allocation does not double-count resources across priority rows',
-    await mixedSara.locator('[data-multi-allocated]').innerText() === '0 / 1' &&
-    await mixedSara.locator('[data-multi-status]').innerText() === 'Shortfall' &&
+  check('Mixed allocation consumes each shared resource once across all priority rows',
+    await mixedSara.locator('[data-multi-allocated]').innerText() === '1 / 1' &&
+    await mixedSara.locator('[data-multi-status]').innerText() === 'Fully Funded' &&
+    /5 of 5 required badge equivalents covered: 1 Individual Officer Badges held \+ 4 shared badges allocated/.test(await page.locator('#multiPlannerSummary').innerText()) &&
     /0 ORV · 0 Universal Badges · 0 Selection Chests/.test(await page.locator('#multiPlannerSummary').innerText()),
     await page.locator('#multiPlannerSummary').innerText());
 
