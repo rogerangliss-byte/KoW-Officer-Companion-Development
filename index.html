@@ -2136,40 +2136,34 @@ function applyOfficerProgress(d){
 
 // Shared inventory/resources. These must NOT clear when switching Officer.
 function captureGlobalResources(){
+ const value=id=>$(id)?.value??'0';
  const d={
-  ls1:$('ls1').value,
-  ls2:$('ls2').value,
-  ls3:$('ls3').value,
-  es1:$('es1').value,es2:$('es2').value,es3:$('es3').value,
-  bs1:$('bs1').value,bs2:$('bs2').value,bs3:$('bs3').value,
-  srvHeld:$('srvHeld').value,
-  universalBadgeHeld:$('universalBadgeHeld').value,
-  universalEpicBadgeHeld:$('universalEpicBadgeHeld').value,universalEliteBadgeHeld:$('universalEliteBadgeHeld').value,
-  legendaryBadgeChestHeld:$('legendaryBadgeChestHeld').value,
-  legendarySelectionChestHeld:$('legendarySelectionChestHeld').value,
-  legendaryBadgeChestMode:$('legendaryBadgeChestMode').value,
-  orvHeld:$('orvHeld').value,
+  ls1:value('ls1'),ls2:value('ls2'),ls3:value('ls3'),
+  es1:value('es1'),es2:value('es2'),es3:value('es3'),
+  bs1:value('bs1'),bs2:value('bs2'),bs3:value('bs3'),
+  srvHeld:value('srvHeld'),
+  universalBadgeHeld:value('universalBadgeHeld'),
+  universalEpicBadgeHeld:value('universalEpicBadgeHeld'),
+  universalEliteBadgeHeld:value('universalEliteBadgeHeld'),
+  legendaryBadgeChestHeld:value('legendaryBadgeChestHeld'),
+  legendarySelectionChestHeld:value('legendarySelectionChestHeld'),
+  legendaryBadgeChestMode:value('legendaryBadgeChestMode'),
+  orvHeld:value('orvHeld'),
   xp:{},
   savedAt:new Date().toISOString()
  };
- XP_DENOMS.forEach(v=>d.xp[v]=$('xp'+v).value);
+ XP_DENOMS.forEach(v=>d.xp[v]=value('xp'+v));
  return d;
 }
 function applyGlobalResources(d){
  d=d||{};
- $('ls1').value=d.ls1??0;
- $('ls2').value=d.ls2??0;
- $('ls3').value=d.ls3??0;
- $('es1').value=d.es1??0;$('es2').value=d.es2??0;$('es3').value=d.es3??0;
- $('bs1').value=d.bs1??0;$('bs2').value=d.bs2??0;$('bs3').value=d.bs3??0;
- $('srvHeld').value=d.srvHeld??0;
- $('universalBadgeHeld').value=d.universalBadgeHeld??0;
- $('universalEpicBadgeHeld').value=d.universalEpicBadgeHeld??0;$('universalEliteBadgeHeld').value=d.universalEliteBadgeHeld??0;
- $('legendaryBadgeChestHeld').value=d.legendaryBadgeChestHeld??0;
-  $('legendarySelectionChestHeld').value=d.legendarySelectionChestHeld??0;
-  $('legendaryBadgeChestMode').value=d.legendaryBadgeChestMode??'badge';
- $('orvHeld').value=d.orvHeld??0;
- XP_DENOMS.forEach(v=>$('xp'+v).value=d.xp?.[v]??0);
+ const setValue=(id,value)=>{const el=$(id);if(el)el.value=value??0;};
+ ['ls1','ls2','ls3','es1','es2','es3','bs1','bs2','bs3','srvHeld',
+  'universalBadgeHeld','universalEpicBadgeHeld','universalEliteBadgeHeld',
+  'legendaryBadgeChestHeld','legendarySelectionChestHeld','orvHeld']
+  .forEach(id=>setValue(id,d[id]));
+ setValue('legendaryBadgeChestMode',d.legendaryBadgeChestMode??'badge');
+ XP_DENOMS.forEach(v=>setValue('xp'+v,d.xp?.[v]));
 }
 function saveGlobalResources(){
  localStorage.setItem(GLOBAL_RESOURCE_KEY,JSON.stringify(captureGlobalResources()));
