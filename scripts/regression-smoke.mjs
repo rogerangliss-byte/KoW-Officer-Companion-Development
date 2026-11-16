@@ -281,6 +281,7 @@ try {
   await page.locator('#scenarioYear').fill('2027');
   await page.locator('#calculateScenario').click();
   await page.locator('#saveScenario').click();
+  await page.waitForFunction(() => document.querySelector('#v440PlanningReadiness')?.innerText.includes('Snapshot Alpha'));
   let savedScenarios = await page.evaluate(() => JSON.parse(localStorage.getItem('kow_v4359_planning_scenarios') || '[]'));
   check('Saved scenario records the inventory snapshot used at calculation time',
     savedScenarios.length === 1 && savedScenarios[0].held.orv === 1728 &&
@@ -324,6 +325,10 @@ try {
   await page.locator('#scenarioName').fill('Snapshot Beta');
   await page.locator('#calculateScenario').click();
   await page.locator('#saveScenario').click();
+  await page.waitForFunction(() => {
+    const text = document.querySelector('#v440PlanningReadiness')?.innerText || '';
+    return text.includes('Snapshot Alpha') && text.includes('Snapshot Beta');
+  });
   savedScenarios = await page.evaluate(() => JSON.parse(localStorage.getItem('kow_v4359_planning_scenarios') || '[]'));
   check('Saving a recalculated scenario creates a separate saved record, preserving the original',
     savedScenarios.length === 2 && savedScenarios[0].name === 'Snapshot Beta' &&
@@ -335,6 +340,10 @@ try {
     /Saved targets/.test(await page.locator('#v440PlanningReadiness').innerText()),
     (await page.locator('#v440PlanningReadiness').innerText()).slice(0, 450));
   await page.locator('[data-delete-scenario="0"]').click();
+  await page.waitForFunction(() => {
+    const text = document.querySelector('#v440PlanningReadiness')?.innerText || '';
+    return text.includes('Snapshot Alpha') && !text.includes('Snapshot Beta');
+  });
   const afterScenarioDelete = await page.evaluate(() => JSON.parse(localStorage.getItem('kow_v4359_planning_scenarios') || '[]'));
   check('Deleting one scenario preserves the other scenario and its original snapshot',
     afterScenarioDelete.length === 1 && afterScenarioDelete[0].name === 'Snapshot Alpha' &&
