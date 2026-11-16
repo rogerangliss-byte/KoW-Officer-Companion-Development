@@ -258,6 +258,11 @@ try {
 
   // Multi-Officer Planner: priority allocation, saved-plan round trip and deletion.
   await page.locator('[data-view="planner"]').click();
+  // Clear any restored working rows so this test starts from a deterministic state.
+  const existingMultiRows = page.locator('#multiPlannerRows tr');
+  while (await existingMultiRows.count()) {
+    await existingMultiRows.first().locator('[data-remove]').click();
+  }
   await page.locator('#multiAddOfficer').click();
   await page.locator('#multiAddOfficer').click();
   const multiRows = page.locator('#multiPlannerRows tr');
