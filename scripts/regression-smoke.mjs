@@ -10,7 +10,7 @@ const check = (name, condition, detail = '') => {
   else failures.push(name + (detail ? ': ' + detail : ''));
 };
 const pageErrors = [];
-page.on('pageerror', error => pageErrors.push(error.message));
+page.on('pageerror', error => pageErrors.push(error.stack || error.message));
 
 try {
   const response = await page.goto(base, { waitUntil: 'domcontentloaded' });
@@ -77,10 +77,11 @@ try {
 
   // XP calculation.
   await page.locator('[data-view="xp"]').click();
-  await page.locator('#currentLevel').fill('0');
-  await page.locator('#targetLevel').fill('1');
+  await page.locator('#currentLevel').fill('1');
+  await page.locator('#targetLevel').fill('2');
   await page.waitForTimeout(250);
-  check('XP requirement is calculated', Number((await page.locator('#xpRequired').innerText()).replace(/[^0-9]/g,'')) > 0);
+  check('XP requirement is calculated', Number((await page.locator('#xpRequired').innerText()).replace(/[^0-9]/g,'')) > 0,
+    'level 1 to 2 should require positive XP; got ' + await page.locator('#xpRequired').innerText());
 
   // Planner calculation and scenario save.
   await page.locator('[data-view="planner"]').click();
