@@ -27,6 +27,13 @@ try {
     check('Navigation opens ' + view, active === view, 'active view is ' + active);
   }
 
+  // Saved progress status filters must render without undefined callbacks.
+  await page.locator('[data-view="progress"]').click();
+  await page.locator('.progressStatusFilter[value="progress"]').uncheck();
+  await page.waitForTimeout(100);
+  await page.locator('.progressStatusFilter[value="progress"]').check();
+  check('Saved progress status filters are interactive', await page.locator('#savedOfficerProgressSummary').count() === 1);
+
   // Officer selection and published S8 readiness rates.
   await page.locator('[data-view="officer"]').click();
   await page.locator('#officerSelect').selectOption({ label: 'S8 Po' });
