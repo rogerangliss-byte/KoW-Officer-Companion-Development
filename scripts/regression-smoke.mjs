@@ -247,6 +247,134 @@ try {
   check('XP requirement is calculated', Number((await page.locator('#xpRequired').innerText()).replace(/[^0-9]/g,'')) > 0,
     'level 1 to 2 should require positive XP; got ' + await page.locator('#xpRequired').innerText());
 
+  // Full single-Officer calculator audit. Preserve and restore the pre-test profile/resource snapshots.
+  const singleOfficerAuditState = await page.evaluate(() => ({
+    profiles: localStorage.getItem('kow_officer_profiles_v435'),
+    resources: localStorage.getItem('kow_global_resources_v435')
+  }));
+  await page.locator('[data-view="officer"]').click();
+  await page.locator('#officerSelect').selectOption({ label: 'S8 Po' });
+  await page.locator('[data-view="stars"]').click();
+  await page.locator('#currentStar').selectOption('5');
+  await page.locator('#targetStar').selectOption('5');
+  await page.locator('[data-view="development"]').click();
+  for (let strand = 0; strand < 4; strand++) {
+    await page.locator('#skillGrid .skill-strand-row:not(.fifth-skill-status)').nth(strand).locator('button.skill-lvl').first().click();
+  }
+  await page.locator('#trainingExact').fill('0');
+  await page.locator('#badgeHeld').fill('0');
+  await page.locator('#unlocked').check();
+  await page.waitForTimeout(100);
+  check('Single-Officer unlock adds exactly 10 badges to the requirement', await page.locator('#badgesUsed').innerText().then(v => Number(v.replace(/[^0-9]/g,'')) === 10));
+  check('Single-Officer training is locked until all four primary skills are complete', await page.locator('#trainingExact').isDisabled());
+
+  // Skill costs are consumed incrementally across the whole tree, not restarted per strand.
+  await page.locator('#skillGrid .skill-strand-row:not(.fifth-skill-status)').nth(0).locator('button.skill-lvl').nth(1).click();
+  await page.locator('#skillGrid .skill-strand-row:not(.fifth-skill-status)').nth(1).locator('button.skill-lvl').nth(1).click();
+  await page.locator('#skillGrid .skill-strand-row:not(.fifth-skill-status)').nth(0).locator('button.skill-lvl').nth(2).click();
+  await page.waitForTimeout(100);
+  check('Single-Officer skill badge spend follows the global incremental sequence across strands',
+    await page.locator('#badgesUsed').innerText().then(v => Number(v.replace(/[^0-9]/g,'')) === 14),
+    'expected 14 badges used including unlock; got ' + await page.locator('#badgesUsed').innerText());
+  check('Single-Officer next skill cost advances globally after cross-strand upgrades',
+    /Next cost: 2 Officer Badges/.test(await page.locator('#nextSkillCostSummary').innerText()),
+    await page.locator('#nextSkillCostSummary').innerText());
+
+  // Completing all four strands must unlock training and total exactly 690 Legendary skill badges.
+  for (let strand = 0; strand < 4; strand++) {
+    await page.locator('#skillGrid .skill-strand-row:not(.fifth-skill-status)').nth(strand).locator('button.skill-lvl').nth(9).click();
+  }
+  await page.waitForFunction(() => !document.querySelector('#trainingExact')?.disabled);
+  check('Single-Officer training unlocks only after all four skills reach level 10',
+    await page.locator('#skillGrid .skill-strand-row:not(.fifth-skill-status) button.skill-lvl.reached').count() === 40 &&
+    /Fifth Skill: UNLOCKED/.test(await page.locator('#skillGrid .fifth-skill-status').innerText()));
+  check('Single-Officer Legendary primary skill cost totals exactly 690',
+    await page.locator('#badgesUsed').innerText().then(v => Number(v.replace(/[^0-9]/g,'')) === 700),
+    'expected 690 skill badges plus 10 unlock badges; got ' + await page.locator('#badgesUsed').innerText());
+  await page.locator('#trainingExact').fill('1');
+  check('Single-Officer first Legendary training level costs 5 badges',
+    await page.locator('#badgesUsed').innerText().then(v => Number(v.replace(/[^0-9]/g,'')) === 705));
+  await page.locator('#trainingExact').fill('180');
+  await page.waitForTimeout(100);
+  check('Single-Officer MAX training reaches the exact 1,600 badge total',
+    await page.locator('#badgesUsed').innerText().then(v => Number(v.replace(/[^0-9]/g,'')) === 1600) &&
+    await page.locator('#badgesRequired').innerText().then(v => Number(v.replace(/[^0-9]/g,'')) === 0),
+    'used=' + await page.locator('#badgesUsed').innerText() + ', required=' + await page.locator('#badgesRequired').innerText());
+
+  // Verify whole-badge ORV handling, individual and universal badges, and mutually exclusive chest use.
+  for (let strand = 0; strand < 4; strand++) {
+    await page.locator('#skillGrid .skill-strand-row:not(.fifth-skill-status)').nth(strand).locator('button.skill-lvl').first().click();
+  }
+  await page.locator('#trainingExact').fill('0');
+  await page.locator('#badgeHeld').fill('1');
+  await page.locator('#universalBadgeHeld').fill('1');
+  await page.locator('#legendaryBadgeChestHeld').fill('1');
+  await page.locator('#legendaryBadgeChestMode').selectOption('orv');
+  await page.locator('#legendarySelectionChestHeld').fill('1');
+  await page.locator('#orvHeld').fill('719');
+  await page.waitForTimeout(100);
+  check('Single-Officer chest converts at the current 720 ORV rate',
+    await page.locator('#selectionChestOrvGenerated').innerText().then(v => Number(v.replace(/[^0-9]/g,'')) === 720));
+  check('Single-Officer ORV counts only whole badges and preserves the 719 remainder',
+    await page.locator('#badgesFromOrv').innerText().then(v => Number(v.replace(/[^0-9]/g,'')) === 1) &&
+    await page.locator('#orvRemainder').innerText().then(v => Number(v.replace(/[^0-9]/g,'')) === 719));
+  check('Single-Officer counts individual, universal and eligible selection badges separately',
+    await page.locator('#universalBadgesAvailable').innerText().then(v => Number(v.replace(/[^0-9]/g,'')) === 2));
+  await page.locator('#legendaryBadgeChestMode').selectOption('badge');
+  await page.waitForTimeout(100);
+  check('Single-Officer badge chest is not double-counted as ORV and a Universal Badge',
+    await page.locator('#selectionChestOrvGenerated').innerText().then(v => Number(v.replace(/[^0-9]/g,'')) === 0) &&
+    await page.locator('#universalBadgesAvailable').innerText().then(v => Number(v.replace(/[^0-9]/g,'')) === 3));
+
+  // Legendary SRV converts only in whole 360-SRV Exclusive Star units.
+  await page.locator('[data-view="stars"]').click();
+  await page.locator('#currentStar').selectOption('0');
+  await page.locator('#targetStar').selectOption('5');
+  await page.locator('#ls1').fill('1');
+  await page.locator('#ls2').fill('1');
+  await page.locator('#ls3').fill('1');
+  await page.locator('#srvHeld').fill('360');
+  await page.waitForTimeout(100);
+  check('Single-Officer SRV converts one complete 360-SRV Exclusive Star into 110 Officer Stars',
+    await page.locator('#exclusiveFromSrv').innerText().then(v => Number(v.replace(/[^0-9]/g,'')) === 1) &&
+    await page.locator('#officerStarsFromSrv').innerText().then(v => Number(v.replace(/[^0-9]/g,'')) === 110) &&
+    await page.locator('#srvRemainder').innerText().then(v => Number(v.replace(/[^0-9]/g,'')) === 0));
+  check('Single-Officer Star calculator combines Star Books and SRV before calculating the remaining target',
+    await page.locator('#starsHeld').innerText().then(v => Number(v.replace(/[^0-9]/g,'')) === 1600) &&
+    await page.locator('#starsRequired').innerText().then(v => Number(v.replace(/[^0-9]/g,'')) === 96400));
+
+  // XP books, shortfall and level-70 cap.
+  await page.locator('[data-view="xp"]').click();
+  await page.locator('#currentLevel').fill('1');
+  await page.locator('#targetLevel').fill('2');
+  await page.locator('#xp1000').fill('1');
+  await page.waitForTimeout(100);
+  const xpNeed = Number((await page.locator('#xpRequired').innerText()).replace(/[^0-9]/g,''));
+  const xpGap = Number((await page.locator('#xpShortfall').innerText()).replace(/[^0-9]/g,''));
+  check('Single-Officer XP Books are included in held XP and reduce the exact shortfall',
+    Number((await page.locator('#xpHeld').innerText()).replace(/[^0-9]/g,'')) === 1000 &&
+    xpNeed > 1000 && xpGap === xpNeed - 1000,
+    'required=' + xpNeed + ', shortfall=' + xpGap);
+  await page.locator('#currentLevel').fill('70');
+  await page.locator('#targetLevel').fill('70');
+  await page.waitForTimeout(100);
+  check('Single-Officer level 70 has no further XP requirement',
+    Number((await page.locator('#xpRequired').innerText()).replace(/[^0-9]/g,'')) === 0 &&
+    Number((await page.locator('#xpShortfall').innerText()).replace(/[^0-9]/g,'')) === 0);
+
+  await page.evaluate(state => {
+    if (state.profiles === null) localStorage.removeItem('kow_officer_profiles_v435');
+    else localStorage.setItem('kow_officer_profiles_v435', state.profiles);
+    if (state.resources === null) localStorage.removeItem('kow_global_resources_v435');
+    else localStorage.setItem('kow_global_resources_v435', state.resources);
+  }, singleOfficerAuditState);
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await page.waitForFunction(() => document.querySelectorAll('#officerSelect option').length === 68);
+  await page.waitForTimeout(350);
+  check('Single-Officer audit restores the original saved profile and resource fixtures',
+    await page.evaluate(state => localStorage.getItem('kow_officer_profiles_v435') === state.profiles &&
+      localStorage.getItem('kow_global_resources_v435') === state.resources, singleOfficerAuditState));
+
   // Planner calculation and scenario save.
   await page.locator('[data-view="planner"]').click();
   await page.locator('#scenarioName').fill('Automated regression scenario');
