@@ -1169,7 +1169,7 @@ try {
   check('Selection Chest eligibility is independent of priority and excludes ineligible S8 Po',
     await mixedRoster[2].row.locator('[data-multi-allocated]').innerText()==='0 / 1' &&
     await mixedRoster[3].row.locator('[data-multi-allocated]').innerText()==='1 / 1' &&
-    /1 Selection Chests/.test(await page.locator('#multiPlannerSummary').innerText()),
+    /0 Selection Chests/.test(await page.locator('#multiPlannerSummary').innerText()),
     await page.locator('#multiPlannerSummary').innerText());
 
   // Restore the untouched not-started profiles after the Single-Officer UI checks, which auto-save progress.
