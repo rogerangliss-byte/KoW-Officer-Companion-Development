@@ -1294,7 +1294,7 @@ try {
     await allResourcesKatherine.locator('[data-multi-status]').innerText() === 'Fully Funded' &&
     await allResourcesPo.locator('[data-multi-allocated]').innerText() === '2 / 2' &&
     await allResourcesPo.locator('[data-multi-status]').innerText() === 'Fully Funded' &&
-    /5 of 5 required badge equivalents covered: 1 Individual Officer Badges held \\+ 4 shared badges allocated/.test(allResourcesSummary) &&
+    /5 of 5 required badge equivalents covered: 1 Individual Officer Badges held \+ 4 shared badges allocated/.test(allResourcesSummary) &&
     /0 ORV · 0 Universal Badges · 0 Selection Chests/.test(allResourcesSummary),
     allResourcesSummary + '\\nCode held=' + await allResourcesCode.locator('[data-multi-held]').innerText() +
     ', allocated=' + await allResourcesCode.locator('[data-multi-allocated]').innerText() +
