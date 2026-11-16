@@ -967,6 +967,108 @@ try {
     await page.locator('#forecastOrvPerBadge').innerText() === '720' &&
     await page.locator('#forecastSrvPerStar').innerText() === '360');
 
+  // Cross-calculator consistency audit: the same saved S8 Po progress and the
+  // same 719 ORV + 1 Universal Badge inventory must reconcile in all three planners.
+  const crossCalculatorFixture = await page.evaluate(() => ({
+    profiles: localStorage.getItem('kow_officer_profiles_v435'),
+    central: localStorage.getItem('kow_central_inventory_v1'),
+    global: localStorage.getItem('kow_global_resources_v435')
+  }));
+  await page.evaluate(() => {
+    const skills = Array.from({ length: 36 }, (_, i) => i < 20);
+    localStorage.setItem('kow_officer_profiles_v435', JSON.stringify({
+      'S8|S8 Po': {
+        unlocked: true, skills, training: 0, currentStar: 2,
+        currentLevel: 30, targetLevel: 70, badgeHeld: 0, savedAt: '2026-11-16T00:00:00.000Z'
+      }
+    }));
+    localStorage.removeItem('kow_central_inventory_v1');
+    localStorage.setItem('kow_global_resources_v435', JSON.stringify({
+      orvHeld: '719', universalBadgeHeld: '1', universalEpicBadgeHeld: '0',
+      universalEliteBadgeHeld: '0', legendaryBadgeChestHeld: '0',
+      legendarySelectionChestHeld: '0', legendaryBadgeChestMode: 'badge',
+      srvHeld: '0', xp: {}, savedAt: '2026-11-16T00:00:00.000Z'
+    }));
+  });
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await page.waitForFunction(() => document.querySelectorAll('#officerSelect option').length === 68);
+  await page.locator('[data-view="officer"]').click();
+  await page.locator('#officerSelect').selectOption({ label: 'S8 Po' });
+  await page.locator('[data-view="development"]').click();
+  await page.waitForTimeout(150);
+  await page.locator('#orvHeld').fill('719');
+  await page.locator('#universalBadgeHeld').fill('1');
+  await page.locator('#legendaryBadgeChestHeld').fill('0');
+  await page.locator('#legendarySelectionChestHeld').fill('0');
+  await page.waitForTimeout(150);
+  const singleRequired = Number((await page.locator('#badgesRequired').innerText()).replace(/[^0-9.-]/g, '')) || 0;
+  const singleOrvRequired = Number((await page.locator('#orvRequired').innerText()).replace(/[^0-9.-]/g, '')) || 0;
+  check('Single-Officer calculator recognises one Universal Badge and sub-threshold ORV',
+    (await page.locator('#universalBadgesAvailable').innerText()).trim() === '1' &&
+    (await page.locator('#badgesFromOrv').innerText()).trim() === '0' &&
+    (await page.locator('#orvRemainder').innerText()).trim() === '719');
+  check('Single-Officer remaining badge and ORV requirements reconcile at the 720 threshold',
+    singleRequired > 0 && singleOrvRequired === singleRequired * 720,
+    'badges required=' + singleRequired + '; ORV required=' + singleOrvRequired);
+
+  await page.locator('[data-view="planner"]').click();
+  while (await page.locator('#multiPlannerRows tr').count()) {
+    await page.locator('#multiPlannerRows tr').first().locator('[data-remove]').click();
+  }
+  await page.locator('#multiAddOfficer').click();
+  const crossRow = page.locator('#multiPlannerRows tr').first();
+  await crossRow.locator('[data-multi-officer]').selectOption({ label: 'S8 Po' });
+  await crossRow.locator('[data-multi-needed]').fill('1600');
+  await page.locator('#multiOrv').fill('719');
+  await page.locator('#multiUniversal').fill('1');
+  await page.locator('#multiChests').fill('0');
+  await page.locator('#multiSelectionChests').fill('0');
+  await page.locator('#multiChestMode').selectOption('badge');
+  await page.waitForTimeout(150);
+  const multiSummary = await page.locator('#multiPlannerSummary').innerText();
+  const multiTotals = multiSummary.match(/(\\d+) of (\\d+) required badge equivalents covered/);
+  const multiNeed = multiTotals ? Number(multiTotals[2]) : -1;
+  check('Multi-Officer Planner uses the same saved Officer badge shortfall as Single-Officer',
+    multiNeed > 0 && singleRequired === multiNeed - 1,
+    'single required=' + singleRequired + '; multi summary=' + multiSummary);
+  check('Multi-Officer Planner preserves 719 ORV and allocates exactly one Universal Badge',
+    await crossRow.locator('[data-multi-allocated]').innerText() === '1 / ' + multiNeed &&
+    /0 of \\d+ required badge equivalents covered/.test(multiSummary) === false &&
+    /719 ORV · 0 Universal Badges · 0 Selection Chests/.test(multiSummary),
+    'row=' + await crossRow.locator('[data-multi-allocated]').innerText() + '; summary=' + multiSummary);
+
+  await page.locator('#kowPlannerSession').selectOption('saved');
+  await page.locator('#kowPlannerSeasonFilter').selectOption('S8');
+  await page.locator('#kowPlannerIncludeNotStarted').uncheck();
+  await page.locator('#kowPlannerIncludeOriginals').uncheck();
+  await page.locator('#advancedMultiOfficerPlanning button[onclick="kowRunAdvancedPlanner()"]').click();
+  await page.waitForTimeout(150);
+  const advancedCrossText = await page.locator('#kowAdvancedPlannerResults').innerText();
+  check('Advanced Planner selects the same saved S8 Po profile used by both badge calculators',
+    await page.locator('#kowAdvancedPlannerResults tbody tr').count() === 1 &&
+    /S8 Po/.test(advancedCrossText),
+    advancedCrossText.slice(0, 300));
+  check('Advanced Planner reads the identical 719 ORV and 1 Universal Badge inventory snapshot',
+    /Inventory detected: ORV 719, Universal Badges 1/.test(advancedCrossText),
+    advancedCrossText.slice(-250));
+  check('Advanced Planner does not recommend ORV funding below the one-badge threshold',
+    /Use Officer-specific badges first\\. Use flexible Universal\\/Selection resources only where required\\./.test(advancedCrossText),
+    advancedCrossText.slice(0, 300));
+
+  await page.evaluate(state => {
+    const restore = (key, value) => value === null ? localStorage.removeItem(key) : localStorage.setItem(key, value);
+    restore('kow_officer_profiles_v435', state.profiles);
+    restore('kow_central_inventory_v1', state.central);
+    restore('kow_global_resources_v435', state.global);
+  }, crossCalculatorFixture);
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await page.waitForFunction(() => document.querySelectorAll('#officerSelect option').length === 68);
+  check('Cross-calculator audit restores the original profile and inventory fixtures',
+    await page.evaluate(state =>
+      localStorage.getItem('kow_officer_profiles_v435') === state.profiles &&
+      localStorage.getItem('kow_central_inventory_v1') === state.central &&
+      localStorage.getItem('kow_global_resources_v435') === state.global, crossCalculatorFixture));
+
   // Database and release forecast.
   await page.locator('[data-view="database"]').click();
   check('Officer database table renders all records', await page.locator('#dbRows tr').count() === 68);
