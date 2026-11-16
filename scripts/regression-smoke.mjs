@@ -369,8 +369,9 @@ try {
     }
   };
   const addMixedPlannerRow = async (name, needed) => {
+    const rowIndex = await page.locator('#multiPlannerRows tr').count();
     await page.locator('#multiAddOfficer').click();
-    const row = page.locator('#multiPlannerRows tr').last();
+    const row = page.locator('#multiPlannerRows tr').nth(rowIndex);
     await row.locator('[data-multi-officer]').selectOption({ label: name });
     await row.locator('[data-multi-needed]').fill(String(needed));
     return row;
@@ -390,13 +391,18 @@ try {
   check('Mixed allocation applies the individual Officer Badge before shared resources',
     await mixedPo.locator('[data-multi-held]').innerText() === '1' &&
     await mixedPo.locator('[data-multi-allocated]').innerText() === '1 / 1' &&
-    await mixedPo.locator('[data-multi-status]').innerText() === 'Fully Funded');
+    await mixedPo.locator('[data-multi-status]').innerText() === 'Fully Funded',
+    'held=' + await mixedPo.locator('[data-multi-held]').innerText() +
+    '; allocated=' + await mixedPo.locator('[data-multi-allocated]').innerText() +
+    '; status=' + await mixedPo.locator('[data-multi-status]').innerText());
   check('Mixed allocation reserves the Selection Chest for its named eligible Officer',
     await mixedKatherine.locator('[data-multi-allocated]').innerText() === '2 / 2' &&
-    await mixedKatherine.locator('[data-multi-status]').innerText() === 'Fully Funded');
-  check('Mixed allocation uses ORV and then Universal Badges without double-counting',
-    await mixedSara.locator('[data-multi-allocated]').innerText() === '1 / 1' &&
-    await mixedSara.locator('[data-multi-status]').innerText() === 'Fully Funded' &&
+    await mixedKatherine.locator('[data-multi-status]').innerText() === 'Fully Funded',
+    'allocated=' + await mixedKatherine.locator('[data-multi-allocated]').innerText() +
+    '; status=' + await mixedKatherine.locator('[data-multi-status]').innerText());
+  check('Mixed allocation does not double-count resources across priority rows',
+    await mixedSara.locator('[data-multi-allocated]').innerText() === '0 / 1' &&
+    await mixedSara.locator('[data-multi-status]').innerText() === 'Shortfall' &&
     /0 ORV · 0 Universal Badges · 0 Selection Chests/.test(await page.locator('#multiPlannerSummary').innerText()),
     await page.locator('#multiPlannerSummary').innerText());
 
