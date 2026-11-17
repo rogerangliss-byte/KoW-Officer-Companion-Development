@@ -206,6 +206,29 @@ test('Officer Progress status filter defaults to showing rows if filter controls
   assert.equal(sandbox.result, true);
 });
 
+test('empty Officer filters clear the visible Officer profile without touching shared resources', () => {
+  const start = source.indexOf('function handleOfficerFilterChange(){');
+  const end = source.indexOf(String.fromCharCode(10) + '}', start);
+  assert.notEqual(start, -1);
+  assert.notEqual(end, -1);
+  const handler = source.slice(start, end + 2);
+  assert.ok(handler.includes('if(!nextKey)'));
+  assert.ok(handler.includes('loadedOfficerProfileIndex=null;'));
+  assert.ok(handler.includes('applyOfficerProgress(null);'));
+  assert.ok(handler.includes('updateProfileStatus(null);'));
+  assert.ok(!handler.includes('applyGlobalResources('), 'Clearing the Officer selection must not overwrite shared inventory');
+  assert.ok(handler.includes('saveOfficerProfile(true,previousIndex)'), 'Previous Officer progress must be saved before changing filters');
+});
+
+test('filter changes load the newly selected Officer profile when the selection changes', () => {
+  const start = source.indexOf('function handleOfficerFilterChange(){');
+  const end = source.indexOf(String.fromCharCode(10) + '}', start);
+  const handler = source.slice(start, end + 2);
+  assert.ok(handler.includes('if(nextKey&&nextKey!==previousKey){'));
+  assert.ok(handler.includes('loadOfficerProfile(nextIndex);'));
+  assert.ok(handler.includes('if(nextKey)saveSelectedOfficerState();'));
+});
+
 test('overview rendering calls a defined status filter helper', () => {
   assert.ok(source.includes('function progressStatusAllowed(r)'));
   assert.ok(source.includes('allRows.filter(progressStatusAllowed)'));
