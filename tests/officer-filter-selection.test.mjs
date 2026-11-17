@@ -69,6 +69,7 @@ test('filter with no matches clears the active profile without selecting Officer
   assert.equal(result.loadedIndex, null);
   assert.equal(result.selectedValue, '');
   assert.ok(result.calls.includes('clear-profile-status'));
+  assert.equal(result.calls.includes('save-selected-officer'), false);
   assert.equal(result.calls.some(call => call.startsWith('load:')), false);
 });
 
