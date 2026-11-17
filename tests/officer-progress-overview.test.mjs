@@ -140,6 +140,15 @@ function allowsCompareFilters(row, statuses, rarities) {
   return sandbox.result;
 }
 
+test('Compare results use the complete Officer Progress overview column set and metadata fields', () => {
+  const expectedHeaders = '<th>Officer</th><th>Season</th><th>Rarity</th><th>Role</th><th>Overall progress</th><th>Development</th><th>Stars</th><th>XP</th><th>Officer Badge shortfall</th><th>Skill Badge shortfall</th><th>Star shortfall</th><th>XP shortfall</th><th>Status</th>';
+  assert.ok(source.includes('<table id="compareProgressResultsTable">'));
+  assert.ok(source.includes('<thead><tr>' + expectedHeaders + '</tr></thead>'));
+  assert.ok(source.includes("esc(r.season||'Original')+'</td><td>'+esc(r.rarity)+'</td><td>'+esc(r.role)"));
+  assert.ok(source.includes("fmt(r.officerBadgeShort)+'</td><td>'+fmt(r.skillBadgeShort)+'</td><td>'+fmt(r.starShort)+'</td><td>'+fmt(r.xpShort)"));
+  assert.ok(source.includes('#savedOfficerProgressTable,#compareProgressResultsTable{min-width:1250px}'));
+});
+
 test('Compare Officer rarity filters include only checked rarities', () => {
   assert.equal(allowsCompareFilters({ maxed: false, notStarted: false, rarity: 'Legendary' }, ['maxed', 'progress', 'notStarted'], ['Legendary']), true);
   assert.equal(allowsCompareFilters({ maxed: false, notStarted: false, rarity: 'Epic' }, ['maxed', 'progress', 'notStarted'], ['Legendary']), false);
