@@ -555,6 +555,53 @@ html.ios-safari{
 /* Upgrade Targets & Recommendations — retained from the v4.6.0 feature milestone */
 .v460-target-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.v460-target-result{margin-top:12px;padding:12px;border:1px solid var(--line);border-radius:12px;background:rgba(0,0,0,.28)}.v460-target-result strong{color:var(--gold2)}@media(max-width:760px){.v460-target-grid{grid-template-columns:1fr}}
 
+
+/* Mobile Officer Progress: render each officer as a readable full-width card.
+   Desktop tables retain their existing 13-column layout. */
+@media(max-width:760px){
+  #savedOfficerProgressTable,#compareProgressResultsTable{
+    width:100%!important;min-width:0!important;table-layout:fixed;
+    border-collapse:separate;border-spacing:0 10px;
+  }
+  #savedOfficerProgressTable thead,#compareProgressResultsTable thead{display:none}
+  #savedOfficerProgressTable tbody,#compareProgressResultsTable tbody{display:block;width:100%}
+  #savedOfficerProgressTable tbody tr.saved-progress-officer-row,
+  #compareProgressResultsTable tbody tr{
+    display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+    width:100%;margin:0 0 12px;padding:8px 10px;
+    border:1px solid rgba(213,167,47,.35);border-radius:12px;
+    background:rgba(0,0,0,.30);
+  }
+  #savedOfficerProgressTable tbody tr.saved-progress-officer-row td,
+  #compareProgressResultsTable tbody tr td{
+    display:flex;align-items:center;justify-content:space-between;gap:8px;
+    min-width:0;padding:8px 4px;text-align:right;
+    border-bottom:1px solid rgba(255,255,255,.07);
+    overflow-wrap:anywhere;font-size:.84rem;
+  }
+  #savedOfficerProgressTable tbody tr.saved-progress-officer-row td::before,
+  #compareProgressResultsTable tbody tr td::before{
+    content:attr(data-label);display:block;flex:0 1 48%;
+    color:var(--muted);font-size:.72rem;font-weight:700;text-align:left;
+  }
+  #savedOfficerProgressTable tbody tr.saved-progress-officer-row td:first-child,
+  #compareProgressResultsTable tbody tr td:first-child{
+    grid-column:1/-1;display:block;text-align:left;padding:8px 4px;
+  }
+  #savedOfficerProgressTable tbody tr.saved-progress-officer-row td:first-child::before,
+  #compareProgressResultsTable tbody tr td:first-child::before{display:none}
+  #savedOfficerProgressTable .progress-officer-cell,
+  #compareProgressResultsTable .progress-officer-cell{min-width:0;gap:8px}
+  #savedOfficerProgressTable .progress-officer-toggle{min-height:42px}
+  #savedOfficerProgressTable .progress-meter,
+  #compareProgressResultsTable .progress-meter{width:84px;min-width:0;flex:0 1 84px}
+  #savedOfficerProgressTable .progress-detail-row{display:block;width:100%;margin-top:-10px}
+  #savedOfficerProgressTable .progress-detail-row>td{display:block;width:100%;padding:0!important}
+  #savedOfficerProgressTable tbody tr:not(.saved-progress-officer-row):not(.progress-detail-row),
+  #compareProgressResultsTable tbody tr:not(:has(td[data-label])){display:block;width:100%}
+  #savedOfficerProgressTable tbody tr:not(.saved-progress-officer-row):not(.progress-detail-row) td,
+  #compareProgressResultsTable tbody tr:not(:has(td[data-label])) td{display:block;text-align:left}
+}
 </style>
 <script>
 (function(){
@@ -3196,7 +3243,7 @@ function renderSavedOfficerProgress(){
  }
  body.innerHTML=rows.length?rows.map(r=>{
   const expanded=expandedSavedOfficerKey===r.key;
-  return '<tr class="saved-progress-officer-row"><td><button type="button" class="progress-officer-toggle" data-progress-toggle="'+esc(r.key)+'" aria-expanded="'+(expanded?'true':'false')+'" aria-controls="progress-detail-'+esc(String(officers.findIndex(o=>String(o.season||'').trim()+'|'+String(o.name||'').trim()===r.key)))+'"><span class="progress-officer-cell"><img class="progress-officer-portrait" data-progress-portrait="'+esc(r.name)+'" alt="" style="display:block"><b>'+esc(r.name)+'</b></span><span class="progress-expand-indicator" aria-hidden="true">'+(expanded?'−':'＋')+'</span></button></td><td>'+esc(r.season||'Original')+'</td><td>'+esc(r.rarity)+'</td><td>'+esc(r.role)+'</td><td>'+meter(r.overall)+'</td><td>'+meter(r.dev)+'</td><td>'+meter(r.stars)+'</td><td>'+meter(r.xp)+'</td><td>'+fmt(r.officerBadgeShort)+'</td><td>'+fmt(r.skillBadgeShort)+'</td><td>'+fmt(r.starShort)+'</td><td>'+fmt(r.xpShort)+'</td><td class="'+(r.maxed?'status-ready':r.notStarted?'':'status-progress')+'">'+r.status+'</td></tr>'+(expanded?savedOfficerProgressDetailMarkup(r):'');
+  return '<tr class="saved-progress-officer-row"><td data-label="Officer"><button type="button" class="progress-officer-toggle" data-progress-toggle="'+esc(r.key)+'" aria-expanded="'+(expanded?'true':'false')+'" aria-controls="progress-detail-'+esc(String(officers.findIndex(o=>String(o.season||'').trim()+'|'+String(o.name||'').trim()===r.key)))+'"><span class="progress-officer-cell"><img class="progress-officer-portrait" data-progress-portrait="'+esc(r.name)+'" alt="" style="display:block"><b>'+esc(r.name)+'</b></span><span class="progress-expand-indicator" aria-hidden="true">'+(expanded?'−':'＋')+'</span></button></td><td data-label="Season">'+esc(r.season||'Original')+'</td><td data-label="Rarity">'+esc(r.rarity)+'</td><td data-label="Role">'+esc(r.role)+'</td><td data-label="Overall progress">'+meter(r.overall)+'</td><td data-label="Development">'+meter(r.dev)+'</td><td data-label="Stars">'+meter(r.stars)+'</td><td data-label="XP">'+meter(r.xp)+'</td><td data-label="Officer Badge shortfall">'+fmt(r.officerBadgeShort)+'</td><td data-label="Skill Badge shortfall">'+fmt(r.skillBadgeShort)+'</td><td data-label="Star shortfall">'+fmt(r.starShort)+'</td><td data-label="XP shortfall">'+fmt(r.xpShort)+'</td><td data-label="Status" class="'+(r.maxed?'status-ready':r.notStarted?'':'status-progress')+'">'+r.status+'</td></tr>'+(expanded?savedOfficerProgressDetailMarkup(r):'');
  }).join(''):'<tr><td colspan="13" class="muted">No saved Officers match the selected status filters.</td></tr>';
  body.querySelectorAll('img[data-progress-portrait]').forEach(img=>setPortraitWithFallback(img,null,officerPortraitCandidates(img.dataset.progressPortrait)));
 }
@@ -3244,7 +3291,7 @@ function runProgressComparison(){
  const wrap=document.getElementById('compareProgressResultsWrap'),body=document.getElementById('compareProgressResults'),rec=document.getElementById('compareProgressRecommendation');
  if(selected.length<2){wrap.style.display='none';rec.style.display='block';rec.textContent='Select at least 2 saved Officers to compare.';return;}
  const picks=sortSavedOfficerProgressRows(selected,document.getElementById('compareProgressSortOrder')?.value||'season');
- body.innerHTML=picks.map(r=>'<tr><td><div class="progress-officer-cell"><img class="progress-officer-portrait" data-compare-result-portrait="'+esc(r.name)+'" alt="'+esc(r.name)+' portrait" style="display:block"><b>'+esc(r.name)+'</b></div></td><td>'+esc(r.season||'Original')+'</td><td>'+esc(r.rarity)+'</td><td>'+esc(r.role)+'</td><td>'+meter(r.overall)+'</td><td>'+meter(r.dev)+'</td><td>'+meter(r.stars)+'</td><td>'+meter(r.xp)+'</td><td>'+fmt(r.officerBadgeShort)+'</td><td>'+fmt(r.skillBadgeShort)+'</td><td>'+fmt(r.starShort)+'</td><td>'+fmt(r.xpShort)+'</td><td class="'+(r.maxed?'status-ready':r.notStarted?'':'status-progress')+'">'+r.status+'</td></tr>').join('');
+ body.innerHTML=picks.map(r=>'<tr><td data-label="Officer"><div class="progress-officer-cell"><img class="progress-officer-portrait" data-compare-result-portrait="'+esc(r.name)+'" alt="'+esc(r.name)+' portrait" style="display:block"><b>'+esc(r.name)+'</b></div></td><td data-label="Season">'+esc(r.season||'Original')+'</td><td data-label="Rarity">'+esc(r.rarity)+'</td><td data-label="Role">'+esc(r.role)+'</td><td data-label="Overall progress">'+meter(r.overall)+'</td><td data-label="Development">'+meter(r.dev)+'</td><td data-label="Stars">'+meter(r.stars)+'</td><td data-label="XP">'+meter(r.xp)+'</td><td data-label="Officer Badge shortfall">'+fmt(r.officerBadgeShort)+'</td><td data-label="Skill Badge shortfall">'+fmt(r.skillBadgeShort)+'</td><td data-label="Star shortfall">'+fmt(r.starShort)+'</td><td data-label="XP shortfall">'+fmt(r.xpShort)+'</td><td data-label="Status" class="'+(r.maxed?'status-ready':r.notStarted?'':'status-progress')+'">'+r.status+'</td></tr>').join('');
  body.querySelectorAll('img[data-compare-result-portrait]').forEach(img=>setPortraitWithFallback(img,null,officerPortraitCandidates(img.dataset.compareResultPortrait)));
  const best=selected.slice().sort((a,b)=>Number(b.maxed)-Number(a.maxed)||b.overall-a.overall||a.name.localeCompare(b.name))[0];rec.style.display='block';
  if(best.maxed)rec.innerHTML='<b>'+esc(officerDisplayName(best))+'</b> is already MAXED.';
