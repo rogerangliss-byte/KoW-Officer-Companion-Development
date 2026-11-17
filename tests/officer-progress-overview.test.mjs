@@ -32,6 +32,14 @@ test('season sorting places newest seasonal Officers first and Originals last', 
   assert.deepEqual(sortRows(rows, 'season').map(r => r.name), ['S8 Epic', 'S7 Legendary', 'S6 MAXED', 'S5 Not Started', 'Original Elite']);
 });
 
+test('newest-first sorting follows Officer Database release order within a season', () => {
+  const sameSeason = [
+    { name: 'Later release', season: 'S8', rarity: 'Epic', releaseOrder: 1, overall: 0, maxed: false, notStarted: true },
+    { name: 'Earlier release', season: 'S8', rarity: 'Legendary', releaseOrder: 0, overall: 0, maxed: false, notStarted: true }
+  ];
+  assert.deepEqual(sortRows(sameSeason, 'season').map(r => r.name), ['Later release', 'Earlier release']);
+});
+
 test('rarity sorting uses Legendary, Epic, Elite order', () => {
   assert.deepEqual(sortRows(rows, 'rarity').map(r => r.rarity), ['Legendary', 'Legendary', 'Legendary', 'Epic', 'Elite']);
 });
