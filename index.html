@@ -1850,7 +1850,6 @@ function handleOfficerFilterChange(){
  const nextKey=nextIndex!==null&&officers[nextIndex]?officerProfileKey(nextIndex):null;
 
  if(nextKey&&nextKey!==previousKey){
-  updateOfficerExperience();
   loadOfficerProfile(nextIndex);
   updateSkillRarityNotice(currentOfficer());
   updateSkillCostSummaries();
@@ -1861,7 +1860,7 @@ function handleOfficerFilterChange(){
   updateProfileStatus(null);
  }
 
- saveSelectedOfficerState();
+ if(nextKey)saveSelectedOfficerState();
  calculate();
  populateCompareOfficers();
  buildUpgradeSummary();
