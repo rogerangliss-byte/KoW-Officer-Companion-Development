@@ -84,27 +84,60 @@ test('overview includes Officer portrait, season, rarity, role and sort control'
 
 
 
-test('Compare Officer sorting supports each rarity, Role and Season', () => {
+test('Compare Officer sorting supports Role, Season, Progress and Upgrade priority without rarity sort modes', () => {
   const compareRows = [
     { name: 'Tank Elite', season: 'S7', rarity: 'Elite', role: 'Tank', releaseOrder: 2, overall: 20, maxed: false, notStarted: false },
     { name: 'Rally Epic', season: 'S8', rarity: 'Epic', role: 'Rally', releaseOrder: 1, overall: 40, maxed: false, notStarted: false },
     { name: 'Garrison Legendary', season: 'S8', rarity: 'Legendary', role: 'Garrison', releaseOrder: 0, overall: 60, maxed: false, notStarted: false }
   ];
-  assert.deepEqual(sortRows(compareRows, 'rarity-legendary').map(r => r.name), ['Garrison Legendary', 'Rally Epic', 'Tank Elite']);
-  assert.deepEqual(sortRows(compareRows, 'rarity-epic').map(r => r.name), ['Rally Epic', 'Garrison Legendary', 'Tank Elite']);
-  assert.deepEqual(sortRows(compareRows, 'rarity-elite').map(r => r.name), ['Tank Elite', 'Garrison Legendary', 'Rally Epic']);
   assert.deepEqual(sortRows(compareRows, 'role').map(r => r.role), ['Garrison', 'Rally', 'Tank']);
   assert.deepEqual(sortRows(compareRows, 'season').map(r => r.name), ['Garrison Legendary', 'Rally Epic', 'Tank Elite']);
+  assert.deepEqual(sortRows(compareRows, 'progress').map(r => r.name), ['Garrison Legendary', 'Rally Epic', 'Tank Elite']);
+  assert.ok(source.includes('value="priority"'));
+  assert.ok(!source.includes('value="rarity-legendary"'));
+  assert.ok(!source.includes('value="rarity-epic"'));
+  assert.ok(!source.includes('value="rarity-elite"'));
 });
 
-test('Compare Officer has an independent sort control and reapplies it to the results', () => {
+test('Compare Officer has independent status and rarity tick-box filters plus its own sort control', () => {
   assert.ok(source.includes('id="compareProgressSortOrder"'));
-  assert.ok(source.includes('value="rarity-legendary"'));
-  assert.ok(source.includes('value="rarity-epic"'));
-  assert.ok(source.includes('value="rarity-elite"'));
+  for (const rarity of ['Legendary', 'Epic', 'Elite']) {
+    assert.ok(source.includes('class="compareRarityFilter" value="'+rarity+'" checked'));
+  }
+  for (const status of ['maxed', 'progress', 'notStarted']) {
+    assert.ok(source.includes('class="compareStatusFilter" value="'+status+'" checked'));
+  }
   assert.ok(source.includes("mode==='role'"));
   assert.ok(source.includes("runProgressComparison();"));
   assert.ok(source.includes('restoreComparePickState()'));
+  assert.ok(source.includes("apply('.compareRarityFilter',st.compareRarityFilters)"));
+  assert.ok(source.includes("'.compareStatusFilter,.compareRarityFilter'"));
+});
+
+function allowsCompareFilters(row, statuses, rarities) {
+  const statusBoxes = ['maxed', 'progress', 'notStarted'].map(value => ({ value, checked: statuses.includes(value) }));
+  const rarityBoxes = ['Legendary', 'Epic', 'Elite'].map(value => ({ value, checked: rarities.includes(value) }));
+  const sandbox = {
+    document: { querySelectorAll: selector => selector === '.compareStatusFilter' ? statusBoxes : selector === '.compareRarityFilter' ? rarityBoxes : [] },
+    result: null
+  };
+  vm.runInNewContext(
+    extractFunction('compareStatusAllowed') + String.fromCharCode(10) + 'result=compareStatusAllowed(' + JSON.stringify(row) + ');',
+    sandbox
+  );
+  return sandbox.result;
+}
+
+test('Compare Officer rarity filters include only checked rarities', () => {
+  assert.equal(allowsCompareFilters({ maxed: false, notStarted: false, rarity: 'Legendary' }, ['maxed', 'progress', 'notStarted'], ['Legendary']), true);
+  assert.equal(allowsCompareFilters({ maxed: false, notStarted: false, rarity: 'Epic' }, ['maxed', 'progress', 'notStarted'], ['Legendary']), false);
+  assert.equal(allowsCompareFilters({ maxed: false, notStarted: false, rarity: 'Elite' }, ['maxed', 'progress', 'notStarted'], ['Elite']), true);
+});
+
+test('Compare Officer combines status and rarity filters', () => {
+  assert.equal(allowsCompareFilters({ maxed: true, notStarted: false, rarity: 'Legendary' }, ['maxed'], ['Legendary']), true);
+  assert.equal(allowsCompareFilters({ maxed: true, notStarted: false, rarity: 'Epic' }, ['maxed'], ['Legendary']), false);
+  assert.equal(allowsCompareFilters({ maxed: false, notStarted: false, rarity: 'Legendary' }, ['maxed'], ['Legendary']), false);
 });
 
 function allowsProgressStatus(row, checkedValues) {
