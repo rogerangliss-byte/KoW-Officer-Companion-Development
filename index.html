@@ -2354,7 +2354,18 @@ function loadProgress(){
  }catch{}
 
  applyGlobalResources(getGlobalResources());
- loadOfficerProfile($('officerSelect').value);
+
+ // An empty filtered Officer list is not Officer index 0. Keep shared
+ // inventory available, but do not attach another Officer's profile.
+ const selectedValue=$('officerSelect')?.value??'';
+ const selectedIndex=selectedValue===''?null:Number(selectedValue);
+ if(selectedIndex!==null&&Number.isInteger(selectedIndex)&&officers[selectedIndex]){
+  loadOfficerProfile(selectedIndex);
+ }else{
+  loadedOfficerProfileIndex=null;
+  applyOfficerProgress(null);
+  updateProfileStatus(null);
+ }
 }
 
 
@@ -2520,7 +2531,8 @@ function persistCurrentStateBeforeBackup(){
  // Force the currently visible Officer-specific fields and shared inventory into localStorage
  // before the browser storage snapshot is created. This prevents the latest unsaved badgeHeld,
  // skill, training, level, stars and resource values being omitted from a cross-device backup.
- if($('officerSelect') && officers[+$('officerSelect').value]) saveOfficerProfile(true);
+ const selectedValue=$('officerSelect')?.value??'';
+ if(selectedValue!==''&&Number.isInteger(Number(selectedValue))&&officers[Number(selectedValue)]) saveOfficerProfile(true);
  else saveGlobalResources();
 }
 function exportFullBackup(){
