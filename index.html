@@ -559,6 +559,10 @@ html.ios-safari{
 /* Portrait Officer Progress: retain the Landscape table/list presentation.
    The detail panel is an inline expansion beneath its selected Officer row. */
 @media (orientation:portrait) and (max-width:760px){
+  /* Match the compact Show filter bar used by Live on narrow Portrait screens. */
+  #progress #progressStatusFilters{
+    flex-wrap:nowrap !important;
+  }
   #progress .table-wrap{
     overflow-x:auto;
     overflow-y:visible;
