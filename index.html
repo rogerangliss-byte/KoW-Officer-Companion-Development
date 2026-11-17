@@ -3093,6 +3093,14 @@ function renderSavedOfficerProgress(){
  body.querySelectorAll('img[data-progress-portrait]').forEach(img=>setPortraitWithFallback(img,null,officerPortraitCandidates(img.dataset.progressPortrait)));
 }
 document.addEventListener('DOMContentLoaded',()=>{restoreStatusFilterState();setTimeout(renderSavedOfficerProgress,0)});
+function progressStatusAllowed(r){
+ const boxes=[...document.querySelectorAll('.progressStatusFilter')];
+ if(!boxes.length)return true;
+ const selected=new Set(boxes.filter(x=>x.checked).map(x=>x.value));
+ if(r.maxed)return selected.has('maxed');
+ if(r.notStarted)return selected.has('notStarted');
+ return selected.has('progress');
+}
 function compareStatusAllowed(r){
  const boxes=[...document.querySelectorAll('.compareStatusFilter')];
  if(!boxes.length)return true;
