@@ -205,3 +205,35 @@ test('backup persistence saves the selected Officer profile when one is selected
   vm.runInNewContext(extractNamedFunction('persistCurrentStateBeforeBackup', 'function exportFullBackup') + '\npersistCurrentStateBeforeBackup();', context);
   assert.deepEqual(calls, ['officer']);
 });
+
+
+test('legacy single-save migration does not assign progress to Officer zero when filters match nobody', () => {
+  const elements = { officerSelect: { value: '' } };
+  const writes = [];
+  const legacy = { currentStar: 4, targetStar: 5, unlocked: true, skills: Array(36).fill(true), orvHeld: 9876 };
+  const context = {
+    officers: [{ name: 'First' }, { name: 'Second' }],
+    loadedOfficerProfileIndex: null,
+    $: id => elements[id] || null,
+    localStorage: {
+      getItem: key => key === 'kow_progress_v4' ? JSON.stringify(legacy) : null,
+      setItem: (key, value) => writes.push([key, value])
+    },
+    getOfficerProfiles: () => ({}),
+    getGlobalResources: () => ({}),
+    applyGlobalResources() {},
+    loadOfficerProfile: index => writes.push(['loaded', index]),
+    applyOfficerProgress: value => writes.push(['progress', value]),
+    updateProfileStatus() {},
+    calculate() {},
+    officerProfileKey: index => 'profile-' + index,
+    OFFICER_PROFILE_KEY: 'kow_officer_profiles_v435',
+    GLOBAL_RESOURCE_KEY: 'kow_global_resources_v435'
+  };
+  const start = source.indexOf('function loadProgress(){');
+  const end = source.indexOf("\\n}\\n\\n\\nconst APP_VERSION", start);
+  vm.runInNewContext(source.slice(start, end + 2) + '\\nloadProgress();', context);
+  assert.equal(writes.some(([key]) => key === 'kow_officer_profiles_v435'), false);
+  assert.equal(writes.some(([key]) => key === 'kow_global_resources_v435'), true);
+  assert.equal(writes.some(([key]) => key === 'loaded'), false);
+});
