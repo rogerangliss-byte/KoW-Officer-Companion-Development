@@ -187,7 +187,7 @@ input,select,button{font:inherit}input,select{width:100%;padding:11px;border:1px
 .progress-detail-stat>span,.progress-detail-stat>small{display:block;color:var(--muted);font-size:.76rem}.progress-detail-stat>b{display:block;font-size:1.1rem;margin:4px 0}.progress-detail-stat>small{font-size:.72rem}
 .progress-detail-section{margin-top:14px}.progress-detail-section> b{display:block;margin-bottom:9px;color:var(--gold2)}
 .progress-detail-skills{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
-.progress-detail-skill{padding:9px;border:1px solid rgba(255,255,255,.09);border-radius:8px;min-width:0}
+.progress-detail-skill{padding:9px;border:1px solid rgba(255,255,255,.09);border-radius:8px;min-width:0}.progress-detail-skill-shared{grid-column:1/-1;margin-top:2px;padding:10px;border:1px solid rgba(213,167,47,.22);border-radius:8px}.progress-detail-skill-shared>div{display:flex;justify-content:space-between;gap:8px;font-size:.82rem;margin-bottom:7px}.progress-detail-skill-shared span{color:var(--muted)}
 .progress-detail-skill>div:first-child{display:flex;justify-content:space-between;gap:6px;font-size:.82rem}.progress-detail-skill>div:first-child span{color:var(--muted)}
 .progress-detail-skill .progress-meter{min-width:0}.progress-detail-footnote{margin:10px 0 0}
 .progress-detail-shortfalls{display:flex;flex-wrap:wrap;gap:8px 18px;margin-top:12px;padding-top:10px;border-top:1px solid rgba(255,255,255,.09);font-size:.82rem;color:var(--muted)}
@@ -3117,6 +3117,7 @@ function savedOfficerProgressData(){
   else{for(let i=0;i<36;i++)skillFlags[i]=!!rawSkillFlags[i];}
   const skillLevels=Array.from({length:4},(_,strand)=>{let paid=0;for(let step=0;step<9;step++){if(skillFlags[strand*9+step])paid++;else break;}return 1+paid;});
   const paidSkillUpgrades=Math.min(36,skillFlags.filter(Boolean).length);
+  const paidSkillUpgrades=Math.min(36,skillFlags.filter(Boolean).length);
   const skillCosts=skillCostsForOfficer(o),promotionTotal=promotionBadgeTotal(o);
   const skillSpent=paidSkillUpgrades>=36?promotionTotal:skillCosts.slice(0,paidSkillUpgrades).reduce((a,b)=>a+b,0);
   const training=Math.max(0,Math.min(180,Number(p.training)||0)),officerMaxBadges=maxBadgesForOfficer(o);
@@ -3135,7 +3136,7 @@ function savedOfficerProgressData(){
   const maxed=developmentComplete&&currentStar>=5&&level>=70,overall=maxed?100:Math.round(((dev+stars+xp)/3)*10)/10;
   const hasProgress=badgesUsed>0||paidSkillUpgrades>0||currentStar>0||level>1,notStarted=!maxed&&!hasProgress,status=maxed?'MAXED':hasProgress?'IN PROGRESS':'NOT STARTED';
   const xpUsedForDetail=level>=70?MAX_XP:cumulativeXp(Math.max(1,level||1));
-  return {key:profileKeyForOfficer(o),name:displayName,season,releaseOrder:officers.indexOf(o),rarity:officerRarity(o),role:officerRole(o),overall,dev,stars,xp,badgeShort,officerBadgeShort,skillBadgeShort,starShort,xpShort,maxed,notStarted,status,unlocked:!!p.unlocked,skillLevels,training,currentLevel:level,currentStar,developmentUsed:badgesUsed,developmentRequired:officerMaxBadges,skillBadgesUsed:skillSpent,skillBadgesRequired:promotionTotal,xpUsed:xpUsedForDetail};
+  return {key:profileKeyForOfficer(o),name:displayName,season,releaseOrder:officers.indexOf(o),rarity:officerRarity(o),role:officerRole(o),overall,dev,stars,xp,badgeShort,officerBadgeShort,skillBadgeShort,starShort,xpShort,maxed,notStarted,status,unlocked:!!p.unlocked,skillLevels,paidSkillUpgrades,training,currentLevel:level,currentStar,developmentUsed:badgesUsed,developmentRequired:officerMaxBadges,skillBadgesUsed:skillSpent,skillBadgesRequired:promotionTotal,xpUsed:xpUsedForDetail};
  });
 }
 function sortSavedOfficerProgressRows(rows,mode='recommended'){
@@ -3159,7 +3160,7 @@ function sortSavedOfficerProgressRows(rows,mode='recommended'){
 }
 let expandedSavedOfficerKey=null;
 function savedOfficerProgressDetailMarkup(r){
- const skillRows=r.skillLevels.map((level,index)=>'<div class="progress-detail-skill"><div><b>Skill '+(index+1)+'</b><span>Level '+level+' / 10</span></div>'+meter((level/10)*100)+'</div>').join('');
+ const skillRows=r.skillLevels.map((level,index)=>'<div class="progress-detail-skill"><div><b>Skill '+(index+1)+'</b><span>Level '+level+' / 10'+(level===1?' · Free starting level':'')+'</span></div></div>').join('')+'<div class="progress-detail-skill-shared"><div><b>Shared skill upgrades</b><span>'+fmt(r.paidSkillUpgrades)+' / 36 paid upgrades · '+Math.round(r.paidSkillUpgrades/36*100)+'%</span></div>'+meter(r.paidSkillUpgrades/36*100)+'</div>';
  const progressStat=(label,value,detail)=>'<div class="progress-detail-stat"><span>'+label+'</span><b>'+value+'</b><small>'+detail+'</small></div>';
  const officerIndex=officers.findIndex(o=>String(o.season||'').trim()+'|'+String(o.name||'').trim()===r.key);
  return '<tr class="progress-detail-row"><td colspan="13"><section class="progress-detail-panel" id="progress-detail-'+officerIndex+'" aria-label="'+esc(r.name)+' development details"><div class="progress-detail-heading"><div><strong>'+esc(r.name)+'</strong><span>'+esc(r.season||'Original')+' · '+esc(r.rarity)+' · '+esc(r.role)+'</span></div><span class="progress-detail-status '+(r.maxed?'status-ready':r.notStarted?'':'status-progress')+'">'+r.status+'</span></div><div class="progress-detail-stats">'+
