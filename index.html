@@ -1894,7 +1894,11 @@ function handleOfficerFilterChange(){
  }else if(nextKey&&nextIndex!==previousIndex){
   loadedOfficerProfileIndex=nextIndex;
  }else if(!nextKey){
+  // No Officer matches the active filters. Clear only Officer-specific fields so
+  // the previous Officer's progress is not left visible under an empty selection.
+  // Shared inventory/resources are deliberately left untouched.
   loadedOfficerProfileIndex=null;
+  applyOfficerProgress(null);
   updateProfileStatus(null);
  }
 
