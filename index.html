@@ -872,26 +872,31 @@ button:disabled,.app-action-primary:disabled,.app-action-save:disabled,.app-acti
   <article class="card">
     <h2>🔎 Compare Officer Progress</h2>
     <p class="notice">Choose any saved Officers to compare their actual saved progress. Shared inventory is not counted as completed progress.</p>
-    <div id="compareStatusFilters" class="notice" style="display:flex;gap:12px 18px;flex-wrap:wrap;align-items:center;margin-bottom:12px">
-      <b>Compare filters:</b>
-      <label style="display:inline-flex;align-items:center;gap:6px;margin:0"><input type="checkbox" class="compareStatusFilter" value="maxed" checked style="width:auto"> MAXED</label>
-      <label style="display:inline-flex;align-items:center;gap:6px;margin:0"><input type="checkbox" class="compareStatusFilter" value="progress" checked style="width:auto"> IN PROGRESS</label>
-      <label style="display:inline-flex;align-items:center;gap:6px;margin:0"><input type="checkbox" class="compareStatusFilter" value="notStarted" checked style="width:auto"> NOT STARTED</label>
-      <span aria-hidden="true" style="opacity:.55">|</span>
-      <b>Rarity:</b>
-      <label style="display:inline-flex;align-items:center;gap:6px;margin:0"><input type="checkbox" class="compareRarityFilter" value="Legendary" checked style="width:auto"> LEGENDARY</label>
-      <label style="display:inline-flex;align-items:center;gap:6px;margin:0"><input type="checkbox" class="compareRarityFilter" value="Epic" checked style="width:auto"> EPIC</label>
-      <label style="display:inline-flex;align-items:center;gap:6px;margin:0"><input type="checkbox" class="compareRarityFilter" value="Elite" checked style="width:auto"> ELITE</label>
-    </div>
-    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px">
-      <label for="compareProgressSortOrder"><b>Sort Officers:</b></label>
-      <select id="compareProgressSortOrder" aria-label="Sort Compare Officer list">
-        <option value="recommended">Recommended order</option>
-        <option value="season" selected>Season — newest first</option>
-        <option value="role">Role</option>
-        <option value="progress">Progress — highest first</option>
-        <option value="priority">Upgrade priority — lowest first</option>
-      </select>
+    <div id="compareStatusFilters" class="notice" style="display:grid;grid-template-columns:minmax(0,1fr) minmax(190px,260px);gap:12px 22px;align-items:center;margin-bottom:12px">
+      <div style="min-width:0">
+        <div style="font-weight:700;margin-bottom:7px">Compare filters</div>
+        <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px 12px;align-items:center">
+          <label style="display:inline-flex;align-items:center;gap:6px;margin:0"><input type="checkbox" class="compareStatusFilter" value="maxed" checked style="width:auto"> MAXED</label>
+          <label style="display:inline-flex;align-items:center;gap:6px;margin:0"><input type="checkbox" class="compareStatusFilter" value="progress" checked style="width:auto"> IN PROGRESS</label>
+          <label style="display:inline-flex;align-items:center;gap:6px;margin:0"><input type="checkbox" class="compareStatusFilter" value="notStarted" checked style="width:auto"> NOT STARTED</label>
+        </div>
+        <div style="font-weight:700;margin:9px 0 7px">Rarity</div>
+        <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px 12px;align-items:center">
+          <label style="display:inline-flex;align-items:center;gap:6px;margin:0"><input type="checkbox" class="compareRarityFilter" value="Legendary" checked style="width:auto"> LEGENDARY</label>
+          <label style="display:inline-flex;align-items:center;gap:6px;margin:0"><input type="checkbox" class="compareRarityFilter" value="Epic" checked style="width:auto"> EPIC</label>
+          <label style="display:inline-flex;align-items:center;gap:6px;margin:0"><input type="checkbox" class="compareRarityFilter" value="Elite" checked style="width:auto"> ELITE</label>
+        </div>
+      </div>
+      <div style="min-width:0">
+        <label for="compareProgressSortOrder" style="margin:0 0 6px"><b>Sort Officers:</b></label>
+        <select id="compareProgressSortOrder" aria-label="Sort Compare Officer list" style="width:100%">
+          <option value="recommended">Recommended order</option>
+          <option value="season" selected>Season — newest first</option>
+          <option value="role">Role</option>
+          <option value="progress">Progress — highest first</option>
+          <option value="priority">Upgrade priority — lowest first</option>
+        </select>
+      </div>
     </div>
     <div style="display:flex;gap:8px;flex-wrap:nowrap;margin-bottom:12px">
       <button type="button" id="compareProgressSelectAll" class="app-action-secondary">Select All</button>
