@@ -555,6 +555,33 @@ html.ios-safari{
 /* Upgrade Targets & Recommendations — retained from the v4.6.0 feature milestone */
 .v460-target-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.v460-target-result{margin-top:12px;padding:12px;border:1px solid var(--line);border-radius:12px;background:rgba(0,0,0,.28)}.v460-target-result strong{color:var(--gold2)}@media(max-width:760px){.v460-target-grid{grid-template-columns:1fr}}
 
+
+/* Portrait Officer Progress: retain the Landscape table/list presentation.
+   The detail panel is an inline expansion beneath its selected Officer row. */
+@media (orientation:portrait) and (max-width:760px){
+  #progress .table-wrap{
+    overflow-x:auto;
+    overflow-y:visible;
+    -webkit-overflow-scrolling:touch;
+    touch-action:pan-x pan-y;
+  }
+  #progress #savedOfficerProgressTable{
+    min-width:1250px;
+    table-layout:auto;
+  }
+  #progress #savedOfficerProgressTable .progress-officer-toggle{
+    min-height:44px;
+  }
+  #progress #savedOfficerProgressTable .progress-detail-row>td{
+    padding:0!important;
+  }
+  #progress #savedOfficerProgressTable .progress-detail-panel{
+    width:100%;
+    max-width:none;
+    white-space:normal;
+  }
+}
+
 </style>
 <script>
 (function(){
