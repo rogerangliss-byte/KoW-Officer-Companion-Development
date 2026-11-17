@@ -1,4 +1,4 @@
-name: Officer filter regression tests
+name: Officer profile and progress regression tests
 
 on:
   push:
@@ -6,6 +6,7 @@ on:
     paths:
       - 'index.html'
       - 'tests/officer-filter-selection.test.mjs'
+      - 'tests/officer-progress-overview.test.mjs'
       - '.github/workflows/officer-filter-regression.yml'
   pull_request:
     paths:
@@ -28,4 +29,4 @@ jobs:
         with:
           node-version: 20
       - name: Run Officer filter regression tests
-        run: node --test tests/officer-filter-selection.test.mjs
+        run: node --test tests/*.test.mjs
