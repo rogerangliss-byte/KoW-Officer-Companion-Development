@@ -83,6 +83,30 @@ test('overview includes Officer portrait, season, rarity, role and sort control'
 });
 
 
+
+test('Compare Officer sorting supports each rarity, Role and Season', () => {
+  const compareRows = [
+    { name: 'Tank Elite', season: 'S7', rarity: 'Elite', role: 'Tank', releaseOrder: 2, overall: 20, maxed: false, notStarted: false },
+    { name: 'Rally Epic', season: 'S8', rarity: 'Epic', role: 'Rally', releaseOrder: 1, overall: 40, maxed: false, notStarted: false },
+    { name: 'Garrison Legendary', season: 'S8', rarity: 'Legendary', role: 'Garrison', releaseOrder: 0, overall: 60, maxed: false, notStarted: false }
+  ];
+  assert.deepEqual(sortRows(compareRows, 'rarity-legendary').map(r => r.name), ['Garrison Legendary', 'Tank Elite', 'Rally Epic']);
+  assert.deepEqual(sortRows(compareRows, 'rarity-epic').map(r => r.name), ['Rally Epic', 'Garrison Legendary', 'Tank Elite']);
+  assert.deepEqual(sortRows(compareRows, 'rarity-elite').map(r => r.name), ['Tank Elite', 'Garrison Legendary', 'Rally Epic']);
+  assert.deepEqual(sortRows(compareRows, 'role').map(r => r.role), ['Garrison', 'Rally', 'Tank']);
+  assert.deepEqual(sortRows(compareRows, 'season').map(r => r.name), ['Garrison Legendary', 'Rally Epic', 'Tank Elite']);
+});
+
+test('Compare Officer has an independent sort control and reapplies it to the results', () => {
+  assert.ok(source.includes('id="compareProgressSortOrder"'));
+  assert.ok(source.includes('value="rarity-legendary"'));
+  assert.ok(source.includes('value="rarity-epic"'));
+  assert.ok(source.includes('value="rarity-elite"'));
+  assert.ok(source.includes("mode==='role'"));
+  assert.ok(source.includes("runProgressComparison();"));
+  assert.ok(source.includes('restoreComparePickState()'));
+});
+
 function allowsProgressStatus(row, checkedValues) {
   const boxes = ['maxed', 'progress', 'notStarted'].map(value => ({
     value,
