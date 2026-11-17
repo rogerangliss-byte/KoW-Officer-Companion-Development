@@ -257,3 +257,44 @@ test('Officer Progress summary counts only rows allowed by the active status fil
     assert.ok(renderer.includes("setCount('progressSummary"+id+"'"));
   }
 });
+
+test('Officer Progress rows expand one saved Officer detail panel without switching the active Officer', () => {
+  assert.ok(source.includes('let expandedSavedOfficerKey=null;'));
+  assert.ok(source.includes('function savedOfficerProgressDetailMarkup(r)'));
+  assert.ok(source.includes('data-progress-toggle='));
+  assert.ok(source.includes('aria-expanded='));
+  assert.ok(source.includes('expandedSavedOfficerKey=expandedSavedOfficerKey===key?null:key;'));
+  assert.ok(source.includes('renderSavedOfficerProgress();'));
+  const detailStart = source.indexOf('function savedOfficerProgressDetailMarkup(r)');
+  const detailEnd = source.indexOf(String.fromCharCode(10) + '}', detailStart);
+  const detail = source.slice(detailStart, detailEnd + 2);
+  for (const field of ['r.overall', 'r.dev', 'r.currentStar', 'r.currentLevel', 'r.skillLevels', 'r.training', 'r.officerBadgeShort', 'r.skillBadgeShort', 'r.starShort', 'r.xpShort']) {
+    assert.ok(detail.includes(field), 'detail panel must show ' + field);
+  }
+  assert.ok(source.includes('progress-detail-stats'));
+  assert.ok(source.includes('progress-detail-skills'));
+  assert.ok(source.includes('progress-detail-shortfalls'));
+  assert.ok(!detail.includes('officerSelect'));
+  assert.ok(!detail.includes('loadOfficerProfile('));
+});
+
+test('Expandable Officer details are derived from each saved profile, not shared inventory', () => {
+  const start = source.indexOf('function savedOfficerProgressData(){');
+  const end = source.indexOf(String.fromCharCode(10) + '}', start);
+  const data = source.slice(start, end + 2);
+  assert.ok(data.includes('const profiles=(typeof getOfficerProfiles'));
+  assert.ok(data.includes('const skillLevels=Array.from({length:4}'));
+  assert.ok(data.includes('developmentUsed:badgesUsed'));
+  assert.ok(data.includes('unlocked:!!p.unlocked'));
+  assert.ok(!data.includes('getGlobalResources()'));
+  assert.ok(!data.includes('orvHeld'));
+  assert.ok(!data.includes('srvHeld'));
+});
+
+test('Expandable Officer details have responsive layout and visible portrait toggle', () => {
+  assert.ok(source.includes('.progress-officer-toggle'));
+  assert.ok(source.includes('.progress-expand-indicator'));
+  assert.ok(source.includes('.progress-detail-panel'));
+  assert.ok(source.includes('@media(max-width:760px){.progress-detail-stats'));
+  assert.ok(source.includes('style="display:block"'));
+});
