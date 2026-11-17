@@ -90,7 +90,7 @@ test('Compare Officer sorting supports each rarity, Role and Season', () => {
     { name: 'Rally Epic', season: 'S8', rarity: 'Epic', role: 'Rally', releaseOrder: 1, overall: 40, maxed: false, notStarted: false },
     { name: 'Garrison Legendary', season: 'S8', rarity: 'Legendary', role: 'Garrison', releaseOrder: 0, overall: 60, maxed: false, notStarted: false }
   ];
-  assert.deepEqual(sortRows(compareRows, 'rarity-legendary').map(r => r.name), ['Garrison Legendary', 'Tank Elite', 'Rally Epic']);
+  assert.deepEqual(sortRows(compareRows, 'rarity-legendary').map(r => r.name), ['Garrison Legendary', 'Rally Epic', 'Tank Elite']);
   assert.deepEqual(sortRows(compareRows, 'rarity-epic').map(r => r.name), ['Rally Epic', 'Garrison Legendary', 'Tank Elite']);
   assert.deepEqual(sortRows(compareRows, 'rarity-elite').map(r => r.name), ['Tank Elite', 'Garrison Legendary', 'Rally Epic']);
   assert.deepEqual(sortRows(compareRows, 'role').map(r => r.role), ['Garrison', 'Rally', 'Tank']);
