@@ -1878,7 +1878,7 @@ function renderOfficerOptions(name){
 function handleOfficerFilterChange(){
  const previousIndex=loadedOfficerProfileIndex;
  const previousKey=previousIndex!==null&&officers[previousIndex]?officerProfileKey(previousIndex):null;
- if(previousIndex!==null)saveOfficerProfile(true,previousIndex);
+ if(previousIndex!==null&&officerProfileDirty)saveOfficerProfile(true,previousIndex);
 
  saveOfficerFilterState();
  renderOfficerOptions();
@@ -2141,6 +2141,7 @@ function parseCsv(text){const lines=text.trim().split(/\r?\n/).slice(1);return l
 const OFFICER_PROFILE_KEY='kow_officer_profiles_v435';
 const GLOBAL_RESOURCE_KEY='kow_global_resources_v435';
 let loadedOfficerProfileIndex=null;
+let officerProfileDirty=false;
 
 function getOfficerProfiles(){
  try{
@@ -2260,6 +2261,7 @@ function saveOfficerProfile(silent=false,index=null){
  profiles[officerProfileKey(idx)]=d;
  localStorage.setItem(OFFICER_PROFILE_KEY,JSON.stringify(profiles));
  saveGlobalResources();
+ officerProfileDirty=false;
  loadedOfficerProfileIndex=idx;
  updateProfileStatus(d);
  if(!silent)alert(`${officerDisplayName(officers[idx])} progress saved.`);
@@ -2268,6 +2270,7 @@ function loadOfficerProfile(index){
  const idx=+index, profiles=getOfficerProfiles(), d=profiles[officerProfileKey(idx)]||null;
  // Only Officer progress changes here. Global resources are deliberately left untouched.
  applyOfficerProgress(d);
+ officerProfileDirty=false;
  loadedOfficerProfileIndex=idx;
  updateProfileStatus(d);
  calculate();
@@ -2316,6 +2319,7 @@ function resetOfficerProfile(){
  const profiles=getOfficerProfiles();
  delete profiles[officerProfileKey(idx)];
  localStorage.setItem(OFFICER_PROFILE_KEY,JSON.stringify(profiles));
+ officerProfileDirty=false;
  applyOfficerProgress(null);
  updateProfileStatus(null);
  calculate();
@@ -2564,12 +2568,14 @@ function buildUpgradeSummary(){
 }
 let officerAutoSaveTimer=null;
 function scheduleOfficerAutoSave(){
+ officerProfileDirty=true;
  clearTimeout(officerAutoSaveTimer);
  officerAutoSaveTimer=setTimeout(()=>{
   try{
    if(loadedOfficerProfileIndex!==null && +$('officerSelect').value===loadedOfficerProfileIndex){
     saveOfficerProfile(true);
    }else{
+    officerProfileDirty=false;
     saveGlobalResources();
    }
   }catch{}
@@ -2580,7 +2586,7 @@ function persistCurrentStateBeforeBackup(){
  // before the browser storage snapshot is created. This prevents the latest unsaved badgeHeld,
  // skill, training, level, stars and resource values being omitted from a cross-device backup.
  const selectedValue=$('officerSelect')?.value??'';
- if(selectedValue!==''&&Number.isInteger(Number(selectedValue))&&officers[Number(selectedValue)]) saveOfficerProfile(true);
+ if(selectedValue!==''&&Number.isInteger(Number(selectedValue))&&officers[Number(selectedValue)]&&officerProfileDirty) saveOfficerProfile(true);
  else saveGlobalResources();
 }
 function exportFullBackup(){
@@ -2871,7 +2877,7 @@ async function init(){
  });
  $('officerSelect').addEventListener('change',()=>{
  saveSelectedOfficerState();
- if(loadedOfficerProfileIndex!==null && loadedOfficerProfileIndex!==+$('officerSelect').value)saveOfficerProfile(true,loadedOfficerProfileIndex);
+ if(loadedOfficerProfileIndex!==null && loadedOfficerProfileIndex!==+$('officerSelect').value && officerProfileDirty)saveOfficerProfile(true,loadedOfficerProfileIndex);
  updateOfficerExperience();
  loadOfficerProfile($('officerSelect').value);
  calculate();
