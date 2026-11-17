@@ -121,6 +121,9 @@ test('Compare Officer has independent status and rarity tick-box filters plus it
   assert.ok(source.includes('data-compare-portrait='));
   assert.ok(source.includes('officerPortraitCandidates(img.dataset.comparePortrait)'));
   assert.ok(source.includes('setPortraitWithFallback(img,null,officerPortraitCandidates(img.dataset.comparePortrait))'));
+  assert.ok(source.includes('data-compare-result-portrait='));
+  assert.ok(source.includes('officerPortraitCandidates(img.dataset.compareResultPortrait)'));
+  assert.ok(source.includes('setPortraitWithFallback(img,null,officerPortraitCandidates(img.dataset.compareResultPortrait))'));
 });
 
 function allowsCompareFilters(row, statuses, rarities) {
