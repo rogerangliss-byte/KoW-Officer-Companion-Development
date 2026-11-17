@@ -112,6 +112,12 @@ test('Compare Officer has independent status and rarity tick-box filters plus it
   assert.ok(source.includes('restoreComparePickState()'));
   assert.ok(source.includes("apply('.compareRarityFilter',st.compareRarityFilters)"));
   assert.ok(source.includes("'.compareStatusFilter,.compareRarityFilter'"));
+  const filterBarStart = source.indexOf('id="compareStatusFilters"');
+  const sortControl = source.indexOf('id="compareProgressSortOrder"');
+  const selectionControls = source.indexOf('id="compareProgressSelectAll"');
+  assert.ok(filterBarStart < sortControl && sortControl < selectionControls, 'Sort control must sit inside the Compare filter bar');
+  assert.ok(source.includes('grid-template-columns:repeat(3,minmax(0,1fr))'), 'Each filter row must use three columns');
+  assert.ok(source.includes('grid-template-columns:minmax(0,1fr) minmax(190px,260px)'), 'Sort control must sit alongside the two filter rows');
 });
 
 function allowsCompareFilters(row, statuses, rarities) {
