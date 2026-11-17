@@ -231,8 +231,8 @@ test('legacy single-save migration does not assign progress to Officer zero when
     GLOBAL_RESOURCE_KEY: 'kow_global_resources_v435'
   };
   const start = source.indexOf('function loadProgress(){');
-  const end = source.indexOf("\\n}\\n\\n\\nconst APP_VERSION", start);
-  vm.runInNewContext(source.slice(start, end + 2) + '\\nloadProgress();', context);
+  const end = source.indexOf("\n}\n\n\nconst APP_VERSION", start);
+  vm.runInNewContext(source.slice(start, end + 2) + '\nloadProgress();', context);
   assert.equal(writes.some(([key]) => key === 'kow_officer_profiles_v435'), false);
   assert.equal(writes.some(([key]) => key === 'kow_global_resources_v435'), true);
   assert.equal(writes.some(([key]) => key === 'loaded'), false);
