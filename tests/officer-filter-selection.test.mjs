@@ -15,24 +15,26 @@ function extractFilterHandler() {
 
 function runFilterChange(nextSelection) {
   const calls = [];
+  let loadedIndex = 0;
   const select = { value: '0' };
   const officers = [
     { season: 'S7', name: 'Liora' },
     { season: 'S8', name: 'Infantry Officer' }
   ];
   const context = {
-    loadedOfficerProfileIndex: 0,
+    get loadedOfficerProfileIndex() { return loadedIndex; },
+    set loadedOfficerProfileIndex(value) { loadedIndex = value; },
     officers,
     $(id) { return id === 'officerSelect' ? select : null; },
     officerProfileKey(index) { return officers[Number(index)].season + '|' + officers[Number(index)].name; },
     saveOfficerProfile(silent, index) {
       calls.push('save:' + index);
-      this.loadedOfficerProfileIndex = Number(index);
+      loadedIndex = Number(index);
     },
     saveOfficerFilterState() { calls.push('save-filters'); },
     renderOfficerOptions() { calls.push('render-options'); select.value = nextSelection; },
     updateOfficerExperience() { calls.push('update-experience'); },
-    loadOfficerProfile(index) { calls.push('load:' + index); this.loadedOfficerProfileIndex = Number(index); },
+    loadOfficerProfile(index) { calls.push('load:' + index); loadedIndex = Number(index); },
     updateSkillRarityNotice() { calls.push('update-skill-rarity'); },
     updateSkillCostSummaries() { calls.push('update-skill-costs'); },
     currentOfficer() { return select.value === '' ? null : officers[Number(select.value)]; },
