@@ -317,6 +317,9 @@ test('Portrait Officer Progress retains the Landscape table and expands one cons
   assert.ok(source.includes('#progress #savedOfficerProgressTable{'));
   assert.ok(source.includes('min-width:1250px;'));
   assert.ok(source.includes('overflow-x:auto;'));
+  assert.ok(source.includes('position:sticky;'));
+  assert.ok(source.includes('left:0;'));
+  assert.ok(source.includes('width:calc(100vw - 48px);'));
   assert.ok(source.includes('return \'<tr class="progress-detail-row"><td colspan="13">'));
   assert.ok(source.includes('expandedSavedOfficerKey=expandedSavedOfficerKey===key?null:key;'));
   assert.ok(source.includes('const expanded=expandedSavedOfficerKey===r.key;'));
