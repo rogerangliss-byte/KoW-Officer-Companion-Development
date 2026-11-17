@@ -3144,7 +3144,8 @@ function renderProgressCompareChoices(){
  const box=document.getElementById('compareProgressChoices'); if(!box)return;
  const mode=document.getElementById('compareProgressSortOrder')?.value||'season';
  const rows=sortSavedOfficerProgressRows(savedOfficerProgressData().filter(compareStatusAllowed),mode);
- box.innerHTML=rows.length?rows.map((r,i)=>`<label style="display:flex;align-items:center;gap:8px;padding:8px;border:1px solid #4a3a12;border-radius:8px"><input type="checkbox" class="progressComparePick" value="${i}"> <span>${esc(r.name)}</span></label>`).join(''):'No saved Officer profiles.';
+ box.innerHTML=rows.length?rows.map((r,i)=>`<label style="display:flex;align-items:center;gap:8px;padding:8px;border:1px solid #4a3a12;border-radius:8px"><input type="checkbox" class="progressComparePick" value="${i}"> <img class="progress-officer-portrait" data-compare-portrait="${esc(r.name)}" alt="${esc(r.name)} portrait" style="display:block;width:34px;height:42px;object-fit:cover;border-radius:5px;flex:0 0 auto"> <span>${esc(r.name)}</span></label>`).join(''):'No saved Officer profiles.';
+ box.querySelectorAll('img[data-compare-portrait]').forEach(img=>setPortraitWithFallback(img,null,officerPortraitCandidates(img.dataset.comparePortrait)));
  box.dataset.compareRows=JSON.stringify(rows);restoreComparePickState();
 }
 function runProgressComparison(){
