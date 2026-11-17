@@ -1877,6 +1877,8 @@ function renderOfficerOptions(name){
 // change the dropdown selection programmatically (which does not fire "change").
 function handleOfficerFilterChange(){
  const previousIndex=loadedOfficerProfileIndex;
+ clearTimeout(officerAutoSaveTimer);
+ officerAutoSaveTimer=null;
  const previousKey=previousIndex!==null&&officers[previousIndex]?officerProfileKey(previousIndex):null;
  if(previousIndex!==null&&officerProfileDirty)saveOfficerProfile(true,previousIndex);
 
@@ -2316,6 +2318,8 @@ function resetOfficerProfile(){
  if($('officerSelect')?.value==='')return;
  const idx=Number($('officerSelect').value),o=officers[idx];if(!o)return;
  if(!confirm(`Reset saved progress for ${officerDisplayName(o)}? Shared resources will not be changed.`))return;
+ clearTimeout(officerAutoSaveTimer);
+ officerAutoSaveTimer=null;
  const profiles=getOfficerProfiles();
  delete profiles[officerProfileKey(idx)];
  localStorage.setItem(OFFICER_PROFILE_KEY,JSON.stringify(profiles));
@@ -2876,6 +2880,8 @@ async function init(){
   el.addEventListener(evt,handleOfficerFilterChange);
  });
  $('officerSelect').addEventListener('change',()=>{
+ clearTimeout(officerAutoSaveTimer);
+ officerAutoSaveTimer=null;
  saveSelectedOfficerState();
  if(loadedOfficerProfileIndex!==null && loadedOfficerProfileIndex!==+$('officerSelect').value && officerProfileDirty)saveOfficerProfile(true,loadedOfficerProfileIndex);
  updateOfficerExperience();
