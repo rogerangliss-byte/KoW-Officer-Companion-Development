@@ -314,6 +314,8 @@ test('Expandable Officer details show free Skill 1 without treating it as 10% pr
 
 test('Portrait Officer Progress retains the Landscape table and expands one consolidated detail panel below the selected row', () => {
   assert.ok(source.includes('@media (orientation:portrait) and (max-width:760px)'));
+  assert.ok(source.includes('#progress #progressStatusFilters{'));
+  assert.ok(source.includes('flex-wrap:nowrap !important;'));
   assert.ok(source.includes('#progress #savedOfficerProgressTable{'));
   assert.ok(source.includes('min-width:1250px;'));
   assert.ok(source.includes('overflow-x:auto;'));
