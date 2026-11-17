@@ -146,7 +146,9 @@ test('Compare results use the complete Officer Progress overview column set and 
   assert.ok(source.includes('<thead><tr>' + expectedHeaders + '</tr></thead>'));
   assert.ok(source.includes(`'<tr><td data-label="Officer"><div class="progress-officer-cell"><img class="progress-officer-portrait" data-compare-result-portrait="'+esc(r.name)+'" alt="'+esc(r.name)+' portrait" style="display:block"><b>'+esc(r.name)+'</b></div></td><td data-label="Season">'+esc(r.season||'Original')+'</td><td data-label="Rarity">'+esc(r.rarity)+'</td><td data-label="Role">'+esc(r.role)`));
   assert.ok(source.includes("fmt(r.officerBadgeShort)+'</td><td data-label=\"Skill Badge shortfall\">'+fmt(r.skillBadgeShort)+'</td><td data-label=\"Star shortfall\">'+fmt(r.starShort)+'</td><td data-label=\"XP shortfall\">'+fmt(r.xpShort)"));
-  assert.ok(source.includes('#savedOfficerProgressTable,#compareProgressResultsTable{min-width:1250px}'));
+  assert.ok(source.includes('grid-template-columns:repeat(3,minmax(0,1fr))'), 'Tablet layout must retain all overview fields in a three-column Officer list');
+  assert.ok(source.includes('grid-template-columns:repeat(2,minmax(0,1fr))'), 'Narrow mobile layout must retain all overview fields in two columns');
+  assert.ok(source.includes('content:attr(data-label)'), 'Mobile layout must label every data field');
 });
 
 test('Compare Officer rarity filters include only checked rarities', () => {
