@@ -144,7 +144,7 @@ test('Compare results use the complete Officer Progress overview column set and 
   const expectedHeaders = '<th>Officer</th><th>Season</th><th>Rarity</th><th>Role</th><th>Overall progress</th><th>Development</th><th>Stars</th><th>XP</th><th>Officer Badge shortfall</th><th>Skill Badge shortfall</th><th>Star shortfall</th><th>XP shortfall</th><th>Status</th>';
   assert.ok(source.includes('<table id="compareProgressResultsTable">'));
   assert.ok(source.includes('<thead><tr>' + expectedHeaders + '</tr></thead>'));
-  assert.ok(source.includes(`'<td data-label="Officer"><span class="progress-officer-cell"><img data-compare-result-portrait="'+esc(r.name)+'" alt=""><b>'+esc(r.name)+'</b></span></td><td data-label="Season">'+esc(r.season||'Original')+'</td><td data-label="Rarity">'+esc(r.rarity)+'</td><td data-label="Role">'+esc(r.role)`));
+  assert.ok(source.includes(`'<td data-label="Officer"><div class="progress-officer-cell"><img class="progress-officer-portrait" data-compare-result-portrait="'+esc(r.name)+'" alt="'+esc(r.name)+' portrait" style="display:block"><b>'+esc(r.name)+'</b></div></td><td data-label="Season">'+esc(r.season||'Original')+'</td><td data-label="Rarity">'+esc(r.rarity)+'</td><td data-label="Role">'+esc(r.role)`));
   assert.ok(source.includes("fmt(r.officerBadgeShort)+'</td><td data-label=\"Skill Badge shortfall\">'+fmt(r.skillBadgeShort)+'</td><td data-label=\"Star shortfall\">'+fmt(r.starShort)+'</td><td data-label=\"XP shortfall\">'+fmt(r.xpShort)"));
   assert.ok(source.includes('#savedOfficerProgressTable,#compareProgressResultsTable{min-width:1250px}'));
 });
