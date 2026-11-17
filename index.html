@@ -173,6 +173,14 @@ input,select,button{font:inherit}input,select{width:100%;padding:11px;border:1px
 .progress-officer-cell{display:flex;align-items:center;gap:9px;min-width:150px;text-align:left}.progress-officer-portrait{display:none;width:42px;height:52px;object-fit:cover;border-radius:6px;border:1px solid var(--line);flex:0 0 auto}
 @media(max-width:760px){#savedOfficerProgressTable,#compareProgressResultsTable{min-width:1250px}}
 
+/* Officer Progress live status summary */
+.progress-summary-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:10px 0 12px}
+.progress-summary-card{padding:12px;border:1px solid rgba(213,167,47,.30);border-radius:12px;background:rgba(0,0,0,.28);min-width:0}
+.progress-summary-card span{display:block;color:var(--muted);font-size:.78rem}
+.progress-summary-card b{display:block;color:var(--gold2);font-size:1.55rem;margin-top:4px}
+.progress-summary-detail{grid-column:1/-1;margin:0;padding:9px 11px;border:1px solid rgba(255,255,255,.08);border-radius:9px;background:rgba(0,0,0,.20);color:var(--muted);font-size:.84rem}
+@media(max-width:600px){.progress-summary-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.progress-summary-detail{grid-column:1/-1}}
+
  .skill-lvl{font-size:12px;padding:8px 5px}
 }
 
@@ -845,7 +853,7 @@ button:disabled,.app-action-primary:disabled,.app-action-save:disabled,.app-acti
   <article class="card">
     <h2>📊 Officer Progress</h2>
     <p class="notice">All Officers are shown automatically. Officers with no saved development are classified as NOT STARTED. Held shared resources do not increase an Officer's progress percentage.</p>
-    <div id="savedOfficerProgressSummary" class="result-box">Save Officer progress to build this dashboard.</div>
+    <div id="savedOfficerProgressSummary" class="progress-summary-grid" aria-live="polite"><div class="progress-summary-card"><span>Total Officers</span><b id="progressSummaryTotal">0</b></div><div class="progress-summary-card"><span>MAXED</span><b id="progressSummaryMaxed">0</b></div><div class="progress-summary-card"><span>IN PROGRESS</span><b id="progressSummaryInProgress">0</b></div><div class="progress-summary-card"><span>NOT STARTED</span><b id="progressSummaryNotStarted">0</b></div><p id="progressSummaryDetail" class="progress-summary-detail">Save Officer progress to build this dashboard.</p></div>
     <div id="progressStatusFilters" class="notice" style="display:flex;gap:18px;flex-wrap:wrap;align-items:center;margin-top:12px">
       <b>Show:</b>
       <label><input type="checkbox" class="progressStatusFilter" value="maxed" checked> MAXED</label>
@@ -3110,12 +3118,28 @@ function renderSavedOfficerProgress(){
  const body=document.getElementById('savedOfficerProgressRows'),summary=document.getElementById('savedOfficerProgressSummary');
  if(!body||!summary)return;
  const allRows=savedOfficerProgressData();
- if(!allRows.length){body.innerHTML='';summary.textContent='No saved Officer profiles yet. Use Save Officer Progress to add Officers to this overview.';return;}
- const ready=allRows.filter(x=>x.maxed),closest=allRows.slice().sort((a,b)=>b.overall-a.overall)[0];
- const sortMode=document.getElementById('progressSortOrder')?.value||'recommended';
- const rows=sortSavedOfficerProgressRows(allRows.filter(progressStatusAllowed),sortMode);
- summary.innerHTML='<b>'+allRows.length+' Officers</b> · <b>'+ready.length+' MAXED</b> · <b>Highest progress:</b> '+esc(closest.name)+' ('+closest.overall+'%)'+(rows.length!==allRows.length?' · <b>Showing '+rows.length+'</b>':'');
- body.innerHTML=rows.length?rows.map(r=>'<tr><td><div class="progress-officer-cell"><img class="progress-officer-portrait" data-progress-portrait="'+esc(r.name)+'" alt="'+esc(r.name)+' portrait"><b>'+esc(r.name)+'</b></div></td><td>'+esc(r.season||'Original')+'</td><td>'+esc(r.rarity)+'</td><td>'+esc(r.role)+'</td><td>'+meter(r.overall)+'</td><td>'+meter(r.dev)+'</td><td>'+meter(r.stars)+'</td><td>'+meter(r.xp)+'</td><td>'+fmt(r.officerBadgeShort)+'</td><td>'+fmt(r.skillBadgeShort)+'</td><td>'+fmt(r.starShort)+'</td><td>'+fmt(r.xpShort)+'</td><td class="'+(r.maxed?'status-ready':r.notStarted?'':'status-progress')+'">'+r.status+'</td></tr>').join(''):'<tr><td colspan="13" class="muted">No saved Officers match the selected status filters.</td></tr>';
+ const rows=sortSavedOfficerProgressRows(allRows.filter(progressStatusAllowed),document.getElementById('progressSortOrder')?.value||'recommended');
+ const counts={
+  total:rows.length,
+  maxed:rows.filter(x=>x.maxed).length,
+  inProgress:rows.filter(x=>!x.maxed&&!x.notStarted).length,
+  notStarted:rows.filter(x=>x.notStarted).length
+ };
+ const setCount=(id,value)=>{const el=document.getElementById(id);if(el)el.textContent=fmt(value);};
+ setCount('progressSummaryTotal',counts.total);
+ setCount('progressSummaryMaxed',counts.maxed);
+ setCount('progressSummaryInProgress',counts.inProgress);
+ setCount('progressSummaryNotStarted',counts.notStarted);
+ const detail=document.getElementById('progressSummaryDetail');
+ if(detail){
+  if(!allRows.length)detail.textContent='No saved Officer profiles yet. Use Save Officer Progress to add Officers to this overview.';
+  else if(!rows.length)detail.textContent='No saved Officers match the selected status filters.';
+  else{
+   const closest=rows.slice().sort((a,b)=>b.overall-a.overall)[0];
+   detail.textContent='Showing '+counts.total+' of '+allRows.length+' Officers · Highest progress in this filtered view: '+closest.name+' ('+closest.overall+'%).';
+  }
+ }
+ body.innerHTML=rows.length?rows.map(r=>'<tr><td><div class="progress-officer-cell"><img class="progress-officer-portrait" data-progress-portrait="'+esc(r.name)+'" alt="'+esc(r.name)+' portrait"><b>'+esc(r.name)+'</b></div></td><td>'+esc(r.season||'Original')+'</td><td>'+esc(r.rarity)+'</td><td>'+esc(r.role)+'</td><td>'+meter(r.overall)+'</td><td>'+meter(r.dev)+'</td><td>'+meter(r.stars)+'</td><td>'+fmt(r.officerBadgeShort)+'</td><td>'+fmt(r.skillBadgeShort)+'</td><td>'+fmt(r.starShort)+'</td><td>'+fmt(r.xpShort)+'</td><td>'+r.status+'</td></tr>').join(''):'<tr><td colspan="13" class="muted">No saved Officers match the selected status filters.</td></tr>';
  body.querySelectorAll('img[data-progress-portrait]').forEach(img=>setPortraitWithFallback(img,null,officerPortraitCandidates(img.dataset.progressPortrait)));
 }
 document.addEventListener('DOMContentLoaded',()=>{restoreStatusFilterState();setTimeout(renderSavedOfficerProgress,0)});
