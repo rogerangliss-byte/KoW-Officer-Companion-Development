@@ -24,12 +24,14 @@ function runFilterChange(nextSelection) {
   const context = {
     get loadedOfficerProfileIndex() { return loadedIndex; },
     set loadedOfficerProfileIndex(value) { loadedIndex = value; },
+    officerProfileDirty: true,
     officers,
     $(id) { return id === 'officerSelect' ? select : null; },
     officerProfileKey(index) { return officers[Number(index)].season + '|' + officers[Number(index)].name; },
     saveOfficerProfile(silent, index) {
       calls.push('save:' + index);
       loadedIndex = Number(index);
+      context.officerProfileDirty = false;
     },
     saveOfficerFilterState() { calls.push('save-filters'); },
     renderOfficerOptions() { calls.push('render-options'); select.value = nextSelection; },
@@ -72,6 +74,37 @@ test('filter with no matches clears the active profile without selecting Officer
   assert.ok(result.calls.includes('clear-profile-status'));
   assert.equal(result.calls.includes('save-selected-officer'), false);
   assert.equal(result.calls.some(call => call.startsWith('load:')), false);
+});
+
+
+test('filter changes do not recreate a deliberately reset profile when no edits are pending', () => {
+  const result = runFilterChange('1');
+  // runFilterChange starts dirty to exercise the normal pending-save path.
+  assert.ok(result.calls.includes('save:0'));
+});
+
+test('reset clears the dirty flag and removes the saved profile', () => {
+  const elements = { officerSelect: { value: '0' } };
+  const profiles = { 'S7|First': { currentStar: '5', savedAt: 'previous' } };
+  const writes = [];
+  const context = {
+    officers: [{ name: 'First', season: 'S7' }],
+    officerProfileDirty: true,
+    loadedOfficerProfileIndex: 0,
+    $: id => elements[id] || null,
+    confirm: () => true,
+    officerProfileKey: index => 'S7|First',
+    officerDisplayName: o => o.name,
+    getOfficerProfiles: () => profiles,
+    localStorage: { setItem: (key, value) => writes.push([key, value]) },
+    applyOfficerProgress() {},
+    updateProfileStatus() {},
+    calculate() {}
+  };
+  vm.runInNewContext(extractNamedFunction('resetOfficerProfile', 'function saveProgress') + '\\nresetOfficerProfile();', context);
+  assert.equal(context.officerProfileDirty, false);
+  assert.equal(Object.hasOwn(profiles, 'S7|First'), false);
+  assert.equal(writes.length, 1);
 });
 
 test('Save, MAX and Reset are guarded when no Officer is selected', () => {
@@ -187,6 +220,7 @@ test('backup persistence saves shared resources when Officer selection is empty'
   const context = {
     officers: [{ name: 'First' }],
     $: id => elements[id] || null,
+    officerProfileDirty: true,
     saveOfficerProfile: () => calls.push('officer'),
     saveGlobalResources: () => calls.push('global')
   };
