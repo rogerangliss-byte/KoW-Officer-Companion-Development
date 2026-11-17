@@ -78,3 +78,130 @@ test('Save, MAX and Reset are guarded when no Officer is selected', () => {
   assert.match(source, /function maxSelectedOfficerProfile\(\)\s*\{\s*if\(\$\('officerSelect'\)\?\.value===''\)return;/);
   assert.match(source, /function resetOfficerProfile\(\)\s*\{\s*if\(\$\('officerSelect'\)\?\.value===''\)return;/);
 });
+
+
+function extractNamedFunction(name, endMarker) {
+  const start = source.indexOf(`function ${name}(`);
+  assert.notEqual(start, -1, `${name} must exist`);
+  const end = source.indexOf(endMarker, start);
+  assert.notEqual(end, -1, `${name} end marker must exist`);
+  return source.slice(start, end);
+}
+
+test('MAX sets the selected Officer to the defined maximum without changing shared inventory', () => {
+  const ids = ['officerSelect','currentStar','targetStar','unlocked','training','trainingExact','trainingLabel','currentLevel','targetLevel'];
+  const elements = Object.fromEntries(ids.map(id => [id, { value: id === 'officerSelect' ? '1' : '0', checked: false }]));
+  const sharedResources = { orvHeld: 12345, srvHeld: 6789, legendaryBadgeChestHeld: 4, legendarySelectionChestHeld: 3, xp: { 500: 99 } };
+  const before = JSON.stringify(sharedResources);
+  let saved = null;
+  const context = {
+    officers: [{ name: 'First', season: 'S7' }, { name: 'Second', season: 'S8' }],
+    skills: Array(36).fill(false),
+    $: id => elements[id] || null,
+    confirm: () => true,
+    officerDisplayName: o => o.name,
+    renderSkillStrands() {},
+    saveOfficerProfile() {
+      saved = {
+        currentStar: elements.currentStar.value,
+        targetStar: elements.targetStar.value,
+        unlocked: elements.unlocked.checked,
+        skills: [...context.skills],
+        training: elements.training.value,
+        currentLevel: elements.currentLevel.value,
+        targetLevel: elements.targetLevel.value
+      };
+    },
+    calculate() {},
+    alert() {},
+    sharedResources
+  };
+  vm.runInNewContext(extractNamedFunction('maxSelectedOfficerProfile', 'function resetOfficerProfile'), context);
+  vm.runInNewContext('maxSelectedOfficerProfile();', context);
+  assert.equal(elements.currentStar.value, 5);
+  assert.equal(elements.targetStar.value, 5);
+  assert.equal(elements.unlocked.checked, true);
+  assert.equal(elements.training.value, 180);
+  assert.equal(elements.currentLevel.value, 70);
+  assert.equal(elements.targetLevel.value, 70);
+  assert.equal(saved.skills.length, 36);
+  assert.ok(saved.skills.every(Boolean));
+  assert.equal(JSON.stringify(sharedResources), before);
+});
+
+test('startup restoration with no matching Officer does not load Officer zero', () => {
+  const elements = { officerSelect: { value: '' } };
+  const calls = [];
+  const context = {
+    officers: [{ name: 'First' }, { name: 'Second' }],
+    loadedOfficerProfileIndex: 0,
+    $: id => elements[id] || null,
+    localStorage: { getItem: () => null, setItem() {} },
+    getOfficerProfiles: () => ({}),
+    getGlobalResources: () => ({ orvHeld: '321' }),
+    applyGlobalResources: value => calls.push(['global', value]),
+    loadOfficerProfile: index => calls.push(['load', index]),
+    applyOfficerProgress: value => calls.push(['progress', value]),
+    updateProfileStatus: value => calls.push(['status', value]),
+    calculate() {},
+    officerProfileKey: () => 'key'
+  };
+  const start = source.indexOf('function loadProgress(){');
+  const end = source.indexOf("\n}\n\n\nconst APP_VERSION", start);
+  assert.notEqual(start, -1);
+  assert.notEqual(end, -1);
+  vm.runInNewContext(source.slice(start, end + 2) + '\\nloadProgress();', context);
+  assert.equal(context.loadedOfficerProfileIndex, null);
+  assert.equal(calls.some(call => call[0] === 'load'), false);
+  assert.ok(calls.some(call => call[0] === 'progress' && call[1] === null));
+  assert.ok(calls.some(call => call[0] === 'global'));
+});
+
+test('startup restoration loads the selected Officer profile, not index zero', () => {
+  const elements = { officerSelect: { value: '1' } };
+  const calls = [];
+  const context = {
+    officers: [{ name: 'First' }, { name: 'Second' }],
+    loadedOfficerProfileIndex: null,
+    $: id => elements[id] || null,
+    localStorage: { getItem: () => null, setItem() {} },
+    getOfficerProfiles: () => ({}),
+    getGlobalResources: () => ({ orvHeld: '321' }),
+    applyGlobalResources: value => calls.push(['global', value]),
+    loadOfficerProfile: index => calls.push(['load', index]),
+    applyOfficerProgress: value => calls.push(['progress', value]),
+    updateProfileStatus: value => calls.push(['status', value]),
+    calculate() {},
+    officerProfileKey: () => 'key'
+  };
+  const start = source.indexOf('function loadProgress(){');
+  const end = source.indexOf("\n}\n\n\nconst APP_VERSION", start);
+  vm.runInNewContext(source.slice(start, end + 2) + '\\nloadProgress();', context);
+  assert.deepEqual(calls.filter(call => call[0] === 'load'), [['load', 1]]);
+});
+
+test('backup persistence saves shared resources when Officer selection is empty', () => {
+  const elements = { officerSelect: { value: '' } };
+  const calls = [];
+  const context = {
+    officers: [{ name: 'First' }],
+    $: id => elements[id] || null,
+    saveOfficerProfile: () => calls.push('officer'),
+    saveGlobalResources: () => calls.push('global')
+  };
+  vm.runInNewContext(extractNamedFunction('persistCurrentStateBeforeBackup', 'function exportFullBackup') + '\\npersistCurrentStateBeforeBackup();', context);
+  assert.deepEqual(calls, ['global']);
+});
+
+test('backup persistence saves the selected Officer profile when one is selected', () => {
+  const elements = { officerSelect: { value: '0' } };
+  const calls = [];
+  const context = {
+    officers: [{ name: 'First' }],
+    $: id => elements[id] || null,
+    saveOfficerProfile: () => calls.push('officer'),
+    saveGlobalResources: () => calls.push('global')
+  };
+  vm.runInNewContext(extractNamedFunction('persistCurrentStateBeforeBackup', 'function exportFullBackup') + '\\npersistCurrentStateBeforeBackup();', context);
+  assert.deepEqual(calls, ['officer']);
+});
