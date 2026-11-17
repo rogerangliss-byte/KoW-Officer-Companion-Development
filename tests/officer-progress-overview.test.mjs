@@ -58,6 +58,16 @@ test('recommended sorting preserves MAXED, in-progress, not-started status group
   assert.equal(result.at(-1).name, 'S5 Not Started');
 });
 
+test('all other sort modes use Officer release order when their primary sort values tie', () => {
+  const ordered = [
+    { name: 'Latest release', season: 'S8', rarity: 'Legendary', releaseOrder: 0, overall: 50, maxed: false, notStarted: false },
+    { name: 'Earlier release', season: 'S7', rarity: 'Legendary', releaseOrder: 1, overall: 50, maxed: false, notStarted: false }
+  ];
+  for (const mode of ['rarity', 'progress', 'priority', 'recommended']) {
+    assert.deepEqual(sortRows(ordered, mode).map(r => r.name), ['Latest release', 'Earlier release'], mode);
+  }
+});
+
 test('sorting does not mutate the source progress data', () => {
   const before = JSON.stringify(rows);
   sortRows(rows, 'progress');
