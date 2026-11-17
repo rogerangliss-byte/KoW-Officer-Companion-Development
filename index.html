@@ -581,6 +581,53 @@ html.ios-safari{
   #savedOfficerProgressTable tbody tr.saved-progress-officer-row,#compareProgressResultsTable tbody tr{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px 12px}
   #savedOfficerProgressTable tbody tr.saved-progress-officer-row td,#compareProgressResultsTable tbody tr td{font-size:.8rem}
 }
+
+/* Portrait-only compact Officer list: details appear only after tapping +.
+   Landscape retains the full multi-column overview. */
+@media (orientation:portrait) and (max-width:900px){
+  #savedOfficerProgressTable{width:100%!important;min-width:0!important;max-width:100%!important;table-layout:fixed}
+  #savedOfficerProgressTable thead{display:none!important}
+  #savedOfficerProgressTable tbody{display:block;width:100%}
+  #savedOfficerProgressTable tbody tr.saved-progress-officer-row{
+    display:block;width:100%;min-width:0;margin:0;padding:5px 2px;
+    border:0;border-bottom:1px solid rgba(213,167,47,.28);
+    border-radius:0;background:transparent;box-sizing:border-box;
+  }
+  #savedOfficerProgressTable tbody tr.saved-progress-officer-row td{
+    display:none!important;
+  }
+  #savedOfficerProgressTable tbody tr.saved-progress-officer-row td:first-child{
+    display:block!important;width:100%;padding:2px 3px!important;
+    border:0;background:transparent;box-sizing:border-box;
+  }
+  #savedOfficerProgressTable .progress-officer-toggle{
+    display:flex;width:100%;min-height:48px;align-items:center;
+    justify-content:space-between;gap:12px;padding:2px 4px;
+  }
+  #savedOfficerProgressTable .progress-officer-cell{
+    display:flex;min-width:0;align-items:center;gap:10px;
+  }
+  #savedOfficerProgressTable .progress-officer-cell b{
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  }
+  #savedOfficerProgressTable .progress-officer-portrait{
+    width:38px!important;height:46px!important;object-fit:cover;
+    flex:0 0 38px;border-radius:5px;
+  }
+  #savedOfficerProgressTable .progress-expand-indicator{
+    flex:0 0 auto;font-size:1.35rem;padding:0 8px;
+  }
+  #savedOfficerProgressTable tbody tr.progress-detail-row{
+    display:block!important;width:100%;margin:0;padding:0;border:0;
+  }
+  #savedOfficerProgressTable tbody tr.progress-detail-row>td{
+    display:block!important;width:100%;padding:0!important;border:0;
+  }
+  #savedOfficerProgressTable .progress-detail-panel{
+    display:block;width:100%;margin:0 0 7px;padding:11px;
+    box-sizing:border-box;
+  }
+}
 </style>
 <script>
 (function(){
