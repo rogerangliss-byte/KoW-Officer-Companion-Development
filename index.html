@@ -3117,7 +3117,6 @@ function savedOfficerProgressData(){
   else{for(let i=0;i<36;i++)skillFlags[i]=!!rawSkillFlags[i];}
   const skillLevels=Array.from({length:4},(_,strand)=>{let paid=0;for(let step=0;step<9;step++){if(skillFlags[strand*9+step])paid++;else break;}return 1+paid;});
   const paidSkillUpgrades=Math.min(36,skillFlags.filter(Boolean).length);
-  const paidSkillUpgrades=Math.min(36,skillFlags.filter(Boolean).length);
   const skillCosts=skillCostsForOfficer(o),promotionTotal=promotionBadgeTotal(o);
   const skillSpent=paidSkillUpgrades>=36?promotionTotal:skillCosts.slice(0,paidSkillUpgrades).reduce((a,b)=>a+b,0);
   const training=Math.max(0,Math.min(180,Number(p.training)||0)),officerMaxBadges=maxBadgesForOfficer(o);
