@@ -63,3 +63,54 @@ test('overview includes Officer portrait, season, rarity, role and sort control'
   assert.ok(source.includes('rarity:officerRarity(o),role:officerRole(o)'));
   assert.ok(source.includes('setPortraitWithFallback(img,null,officerPortraitCandidates'));
 });
+
+
+function allowsProgressStatus(row, checkedValues) {
+  const boxes = ['maxed', 'progress', 'notStarted'].map(value => ({
+    value,
+    checked: checkedValues.includes(value)
+  }));
+  const sandbox = {
+    document: { querySelectorAll: selector => selector === '.progressStatusFilter' ? boxes : [] },
+    row,
+    result: null
+  };
+  vm.runInNewContext(
+    extractFunction('progressStatusAllowed') + String.fromCharCode(10) + 'result=progressStatusAllowed(row);',
+    sandbox
+  );
+  return sandbox.result;
+}
+
+test('Officer Progress status filter includes MAXED only when selected', () => {
+  assert.equal(allowsProgressStatus({ maxed: true, notStarted: false }, ['maxed']), true);
+  assert.equal(allowsProgressStatus({ maxed: true, notStarted: false }, ['progress', 'notStarted']), false);
+});
+
+test('Officer Progress status filter includes IN PROGRESS only when selected', () => {
+  assert.equal(allowsProgressStatus({ maxed: false, notStarted: false }, ['progress']), true);
+  assert.equal(allowsProgressStatus({ maxed: false, notStarted: false }, ['maxed', 'notStarted']), false);
+});
+
+test('Officer Progress status filter includes NOT STARTED only when selected', () => {
+  assert.equal(allowsProgressStatus({ maxed: false, notStarted: true }, ['notStarted']), true);
+  assert.equal(allowsProgressStatus({ maxed: false, notStarted: true }, ['maxed', 'progress']), false);
+});
+
+test('Officer Progress status filter defaults to showing rows if filter controls are absent', () => {
+  const sandbox = {
+    document: { querySelectorAll: () => [] },
+    row: { maxed: false, notStarted: true },
+    result: null
+  };
+  vm.runInNewContext(
+    extractFunction('progressStatusAllowed') + String.fromCharCode(10) + 'result=progressStatusAllowed(row);',
+    sandbox
+  );
+  assert.equal(sandbox.result, true);
+});
+
+test('overview rendering calls a defined status filter helper', () => {
+  assert.match(source, /function progressStatusAllowed\\(r\\)/);
+  assert.match(source, /allRows\\.filter\\(progressStatusAllowed\\)/);
+});
