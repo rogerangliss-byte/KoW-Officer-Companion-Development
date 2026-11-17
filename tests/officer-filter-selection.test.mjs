@@ -233,6 +233,7 @@ test('backup persistence saves the selected Officer profile when one is selected
   const calls = [];
   const context = {
     officers: [{ name: 'First' }],
+    officerProfileDirty: true,
     $: id => elements[id] || null,
     saveOfficerProfile: () => calls.push('officer'),
     saveGlobalResources: () => calls.push('global')
