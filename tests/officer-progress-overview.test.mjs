@@ -152,7 +152,9 @@ test('Compare results use the complete Officer Progress overview column set and 
   assert.ok(source.includes('@media(max-width:760px){\n  #savedOfficerProgressTable,#compareProgressResultsTable{\n    width:100%!important;min-width:0!important;max-width:100%!important;\n    table-layout:fixed;'), 'Portrait and landscape must share the same table-style overview without a separate portrait card layout');
   assert.ok(source.includes('display:table-row;width:auto;margin:0;padding:0;'), 'Mobile Officer rows must retain the compact table layout rather than cards');
   assert.ok(!source.includes('#savedOfficerProgressTable tbody tr.saved-progress-officer-row td{\n    display:none!important;'), 'Portrait mode must not hide overview fields behind the expand control');
-  assert.ok(source.includes('#savedOfficerProgressTable tbody tr.progress-detail-row>td{\n    display:block!important;'), 'Expanded details must display as a consolidated card below the Officer row');
+  assert.ok(source.includes('#savedOfficerProgressTable tbody tr.progress-detail-row{display:table-row;width:auto}'), 'Expanded details must occupy a dedicated table row below the Officer row');
+  assert.ok(source.includes('#savedOfficerProgressTable tbody tr.progress-detail-row>td{display:table-cell;width:auto;padding:0!important}'), 'Expanded detail cell must span the detail row without breaking table layout');
+  assert.ok(source.includes('#savedOfficerProgressTable .progress-detail-panel{\n    display:block;width:100%;margin:0;padding:11px;'), 'Expanded details must render as one consolidated full-width card inside the detail row');
 });
 
 test('Compare Officer rarity filters include only checked rarities', () => {
