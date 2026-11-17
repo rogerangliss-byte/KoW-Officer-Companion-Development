@@ -25,6 +25,7 @@ function runFilterChange(nextSelection, dirty = true) {
     get loadedOfficerProfileIndex() { return loadedIndex; },
     set loadedOfficerProfileIndex(value) { loadedIndex = value; },
     officerProfileDirty: dirty,
+    officerAutoSaveTimer: null,
     clearTimeout() { calls.push('clear-pending-save'); },
     officers,
     $(id) { return id === 'officerSelect' ? select : null; },
@@ -91,6 +92,7 @@ test('reset clears the dirty flag and removes the saved profile', () => {
   const context = {
     officers: [{ name: 'First', season: 'S7' }],
     officerProfileDirty: true,
+    OFFICER_PROFILE_KEY: 'kow_officer_profiles_v435',
     officerAutoSaveTimer: 123,
     clearTimeout: value => writes.push(['clear-timeout', value]),
     loadedOfficerProfileIndex: 0,
