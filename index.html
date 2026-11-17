@@ -2327,18 +2327,24 @@ function loadProgress(){
   if(!Object.keys(getOfficerProfiles()).length){
    const legacy=JSON.parse(localStorage.getItem('kow_progress_v4')||'null');
    if(legacy){
-    const idx=Number(legacy.officer??$('officerSelect').value??0);
-    $('officerSelect').value=idx;
-    const migrated={
-     currentStar:legacy.currentStar??0,targetStar:legacy.targetStar??5,
-     unlocked:!!legacy.unlocked,skills:Array.isArray(legacy.skills)?legacy.skills:[],
-     training:legacy.training??0,badgeHeld:legacy.badgeHeld??0,
-     currentLevel:legacy.currentLevel??1,targetLevel:legacy.targetLevel??70,
-     goal:legacy.goal??'max',savedAt:new Date().toISOString()
-    };
-    const p=getOfficerProfiles();p[officerProfileKey(idx)]=migrated;
-    localStorage.setItem(OFFICER_PROFILE_KEY,JSON.stringify(p));
+    const selectedValue=$('officerSelect')?.value??'';
+    const legacyIndex=legacy.officer!==undefined&&legacy.officer!==null
+      ? Number(legacy.officer)
+      : selectedValue===''?null:Number(selectedValue);
+    if(legacyIndex!==null&&Number.isInteger(legacyIndex)&&officers[legacyIndex]){
+     $('officerSelect').value=legacyIndex;
+     const migrated={
+      currentStar:legacy.currentStar??0,targetStar:legacy.targetStar??5,
+      unlocked:!!legacy.unlocked,skills:Array.isArray(legacy.skills)?legacy.skills:[],
+      training:legacy.training??0,badgeHeld:legacy.badgeHeld??0,
+      currentLevel:legacy.currentLevel??1,targetLevel:legacy.targetLevel??70,
+      goal:legacy.goal??'max',savedAt:new Date().toISOString()
+     };
+     const p=getOfficerProfiles();p[officerProfileKey(legacyIndex)]=migrated;
+     localStorage.setItem(OFFICER_PROFILE_KEY,JSON.stringify(p));
+    }
 
+    // Shared inventory can be migrated independently, even when no Officer matches the filters.
     if(!Object.keys(getGlobalResources()).length){
      const g={
       ls1:legacy.ls1??0,ls2:legacy.ls2??0,ls3:legacy.ls3??0,srvHeld:legacy.srvHeld??0,
