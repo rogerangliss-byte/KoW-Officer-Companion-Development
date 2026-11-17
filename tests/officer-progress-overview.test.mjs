@@ -266,8 +266,8 @@ test('click sorting orders Season, Rarity, Role, Progress and Status in both dir
   assert.deepEqual(headerSortRows(sample, 'role', 'desc').map(r => r.role), ['Tank', 'Rally', 'Infantry', 'Garrison']);
   assert.deepEqual(headerSortRows(sample, 'progress', 'asc').map(r => r.overall), [10, 20, 50, 75]);
   assert.deepEqual(headerSortRows(sample, 'progress', 'desc').map(r => r.overall), [75, 50, 20, 10]);
-  assert.deepEqual(headerSortRows(sample, 'status', 'asc').map(r => r.name), ['S7 Legendary', 'S6 Epic', 'S8 Epic', 'Original Elite']);
-  assert.deepEqual(headerSortRows(sample, 'status', 'desc').map(r => r.name), ['Original Elite', 'S8 Epic', 'S6 Epic', 'S7 Legendary']);
+  assert.deepEqual(headerSortRows(sample, 'status', 'asc').map(r => r.name), ['S7 Legendary', 'S6 Epic', 'Original Elite', 'S8 Epic']);
+  assert.deepEqual(headerSortRows(sample, 'status', 'desc').map(r => r.name), ['S8 Epic', 'Original Elite', 'S6 Epic', 'S7 Legendary']);
 });
 
 test('Officer Progress dropdown remains available and clears active heading sort when changed', () => {
