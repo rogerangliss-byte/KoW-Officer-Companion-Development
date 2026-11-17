@@ -310,3 +310,14 @@ test('Expandable Officer details show free Skill 1 without treating it as 10% pr
   assert.ok(data.includes('const paidSkillUpgrades=Math.min(36,skillFlags.filter(Boolean).length);'));
   assert.ok(data.includes('skillLevels,paidSkillUpgrades,training'));
 });
+
+
+test('Portrait Officer Progress retains the Landscape table and expands one consolidated detail panel below the selected row', () => {
+  assert.ok(source.includes('@media (orientation:portrait) and (max-width:760px)'));
+  assert.ok(source.includes('#progress #savedOfficerProgressTable{'));
+  assert.ok(source.includes('min-width:1250px;'));
+  assert.ok(source.includes('overflow-x:auto;'));
+  assert.ok(source.includes('return \'<tr class="progress-detail-row"><td colspan="13">'));
+  assert.ok(source.includes('expandedSavedOfficerKey=expandedSavedOfficerKey===key?null:key;'));
+  assert.ok(source.includes('const expanded=expandedSavedOfficerKey===r.key;'));
+});
