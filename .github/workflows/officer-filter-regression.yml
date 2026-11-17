@@ -1,0 +1,31 @@
+name: Officer filter regression tests
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'index.html'
+      - 'tests/officer-filter-selection.test.mjs'
+      - '.github/workflows/officer-filter-regression.yml'
+  pull_request:
+    paths:
+      - 'index.html'
+      - 'tests/officer-filter-selection.test.mjs'
+      - '.github/workflows/officer-filter-regression.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  officer-filter-regression:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out Development repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Run Officer filter regression tests
+        run: node --test tests/officer-filter-selection.test.mjs
