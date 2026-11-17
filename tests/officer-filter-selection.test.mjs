@@ -101,7 +101,7 @@ test('reset clears the dirty flag and removes the saved profile', () => {
     updateProfileStatus() {},
     calculate() {}
   };
-  vm.runInNewContext(extractNamedFunction('resetOfficerProfile', 'function saveProgress') + '\\nresetOfficerProfile();', context);
+  vm.runInNewContext(extractNamedFunction('resetOfficerProfile', 'function saveProgress') + String.fromCharCode(10) + 'resetOfficerProfile();', context);
   assert.equal(context.officerProfileDirty, false);
   assert.equal(Object.hasOwn(profiles, 'S7|First'), false);
   assert.equal(writes.length, 1);
