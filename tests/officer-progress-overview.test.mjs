@@ -6,16 +6,17 @@ import vm from 'node:vm';
 const source = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
 
 function extractFunction(name) {
-  const start = source.indexOf(`function ${name}(`);
-  assert.notEqual(start, -1, `${name} must exist`);
-  const end = source.indexOf('\\n}', start);
-  assert.notEqual(end, -1, `${name} must have a closing brace`);
+  const start = source.indexOf('function ' + name + '(');
+  assert.notEqual(start, -1, name + ' must exist');
+  const end = source.indexOf(String.fromCharCode(10) + '}', start);
+  assert.notEqual(end, -1, name + ' must have a closing brace');
   return source.slice(start, end + 2);
 }
 
 function sortRows(rows, mode) {
   const sandbox = { input: rows, result: null };
-  vm.runInNewContext(extractFunction('sortSavedOfficerProgressRows') + `\\nresult=sortSavedOfficerProgressRows(input, ${JSON.stringify(mode)});`, sandbox);
+  const call = 'result=sortSavedOfficerProgressRows(input, ' + JSON.stringify(mode) + ');';
+  vm.runInNewContext(extractFunction('sortSavedOfficerProgressRows') + String.fromCharCode(10) + call, sandbox);
   return sandbox.result;
 }
 
