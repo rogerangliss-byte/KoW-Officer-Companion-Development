@@ -25,6 +25,7 @@ function runFilterChange(nextSelection, dirty = true) {
     get loadedOfficerProfileIndex() { return loadedIndex; },
     set loadedOfficerProfileIndex(value) { loadedIndex = value; },
     officerProfileDirty: dirty,
+    clearTimeout() { calls.push('clear-pending-save'); },
     officers,
     $(id) { return id === 'officerSelect' ? select : null; },
     officerProfileKey(index) { return officers[Number(index)].season + '|' + officers[Number(index)].name; },
@@ -90,6 +91,8 @@ test('reset clears the dirty flag and removes the saved profile', () => {
   const context = {
     officers: [{ name: 'First', season: 'S7' }],
     officerProfileDirty: true,
+    officerAutoSaveTimer: 123,
+    clearTimeout: value => writes.push(['clear-timeout', value]),
     loadedOfficerProfileIndex: 0,
     $: id => elements[id] || null,
     confirm: () => true,
@@ -103,8 +106,10 @@ test('reset clears the dirty flag and removes the saved profile', () => {
   };
   vm.runInNewContext(extractNamedFunction('resetOfficerProfile', 'function saveProgress') + String.fromCharCode(10) + 'resetOfficerProfile();', context);
   assert.equal(context.officerProfileDirty, false);
+  assert.equal(context.officerAutoSaveTimer, null);
   assert.equal(Object.hasOwn(profiles, 'S7|First'), false);
-  assert.equal(writes.length, 1);
+  assert.equal(writes[0][0], 'clear-timeout');
+  assert.equal(writes[1][0], 'kow_officer_profiles_v435');
 });
 
 test('Save, MAX and Reset are guarded when no Officer is selected', () => {
