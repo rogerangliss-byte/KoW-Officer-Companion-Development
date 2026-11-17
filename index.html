@@ -1834,6 +1834,38 @@ function renderOfficerOptions(name){
    if($('officerPortraitPlaceholder'))$('officerPortraitPlaceholder').style.display='flex';
  }
 }
+ 
+// Keep the selected Officer and the loaded progress profile in sync when filters
+// change the dropdown selection programmatically (which does not fire "change").
+function handleOfficerFilterChange(){
+ const previousIndex=loadedOfficerProfileIndex;
+ const previousKey=previousIndex!==null&&officers[previousIndex]?officerProfileKey(previousIndex):null;
+ if(previousIndex!==null)saveOfficerProfile(true,previousIndex);
+
+ saveOfficerFilterState();
+ renderOfficerOptions();
+
+ const selectedValue=$('officerSelect')?.value??'';
+ const nextIndex=selectedValue===''?null:Number(selectedValue);
+ const nextKey=nextIndex!==null&&officers[nextIndex]?officerProfileKey(nextIndex):null;
+
+ if(nextKey&&nextKey!==previousKey){
+  updateOfficerExperience();
+  loadOfficerProfile(nextIndex);
+  updateSkillRarityNotice(currentOfficer());
+  updateSkillCostSummaries();
+ }else if(nextKey&&nextIndex!==previousIndex){
+  loadedOfficerProfileIndex=nextIndex;
+ }else if(!nextKey){
+  loadedOfficerProfileIndex=null;
+  updateProfileStatus(null);
+ }
+
+ saveSelectedOfficerState();
+ calculate();
+ populateCompareOfficers();
+ buildUpgradeSummary();
+}
 function setPortraitWithFallback(img,placeholder,candidates,index=0){
  if(!img)return;
  if(index>=candidates.length){
@@ -2180,7 +2212,8 @@ function updateProfileStatus(d){
  if(st)st.textContent=d?.savedAt ? `Saved ${new Date(d.savedAt).toLocaleString()}` : 'Not saved yet';
 }
 function saveOfficerProfile(silent=false,index=null){
- const idx=index==null ? +$('officerSelect').value : +index;
+ if(index==null&&$('officerSelect')?.value==='')return;
+ const idx=index==null ? Number($('officerSelect').value) : Number(index);
  if(!Number.isFinite(idx)||!officers[idx])return;
  const profiles=getOfficerProfiles(), d=captureOfficerProgress();
  profiles[officerProfileKey(idx)]=d;
@@ -2200,7 +2233,8 @@ function loadOfficerProfile(index){
 }
 
 function maxSelectedOfficerProfile(){
- const idx=+$('officerSelect').value;
+ if($('officerSelect')?.value==='')return;
+ const idx=Number($('officerSelect').value);
  const o=officers[idx];
  if(!o)return;
 
@@ -2235,7 +2269,8 @@ function maxSelectedOfficerProfile(){
 }
 
 function resetOfficerProfile(){
- const idx=+$('officerSelect').value,o=officers[idx];if(!o)return;
+ if($('officerSelect')?.value==='')return;
+ const idx=Number($('officerSelect').value),o=officers[idx];if(!o)return;
  if(!confirm(`Reset saved progress for ${officerDisplayName(o)}? Shared resources will not be changed.`))return;
  const profiles=getOfficerProfiles();
  delete profiles[officerProfileKey(idx)];
@@ -2773,7 +2808,7 @@ async function init(){
  ['officerSearch','officerSeasonFilter','officerRarityFilter','officerRoleFilter'].forEach(id=>{
   const el=$(id);if(!el)return;
   const evt=id==='officerSearch'?'input':'change';
-  el.addEventListener(evt,()=>{saveOfficerFilterState();renderOfficerOptions();saveSelectedOfficerState();calculate();populateCompareOfficers();buildUpgradeSummary()});
+  el.addEventListener(evt,handleOfficerFilterChange);
  });
  $('officerSelect').addEventListener('change',()=>{
  saveSelectedOfficerState();
