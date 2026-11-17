@@ -118,6 +118,9 @@ test('Compare Officer has independent status and rarity tick-box filters plus it
   assert.ok(filterBarStart < sortControl && sortControl < selectionControls, 'Sort control must sit inside the Compare filter bar');
   assert.ok(source.includes('grid-template-columns:repeat(3,minmax(0,1fr))'), 'Each filter row must use three columns');
   assert.ok(source.includes('grid-template-columns:minmax(0,1fr) minmax(190px,260px)'), 'Sort control must sit alongside the two filter rows');
+  assert.ok(source.includes('data-compare-portrait='));
+  assert.ok(source.includes('officerPortraitCandidates(img.dataset.comparePortrait)'));
+  assert.ok(source.includes('setPortraitWithFallback(img,null,officerPortraitCandidates(img.dataset.comparePortrait))'));
 });
 
 function allowsCompareFilters(row, statuses, rarities) {
