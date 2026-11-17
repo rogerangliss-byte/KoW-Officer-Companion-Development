@@ -576,9 +576,16 @@ html.ios-safari{
     padding:0!important;
   }
   #progress #savedOfficerProgressTable .progress-detail-panel{
-    width:100%;
-    max-width:none;
+    /* Keep the expanded card anchored to the visible phone viewport,
+       rather than stretching it to the wide table's full scroll width. */
+    position:sticky;
+    left:0;
+    z-index:2;
+    box-sizing:border-box;
+    width:calc(100vw - 48px);
+    max-width:720px;
     white-space:normal;
+    background:var(--card, #171717);
   }
 }
 
