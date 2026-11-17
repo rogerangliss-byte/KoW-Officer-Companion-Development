@@ -150,7 +150,7 @@ test('Compare results use the complete Officer Progress overview column set and 
   assert.ok(source.includes('grid-template-columns:repeat(2,minmax(0,1fr))'), 'Narrow mobile layout must retain all overview fields in two columns');
   assert.ok(source.includes('content:attr(data-label)'), 'Mobile layout must label every data field');
   assert.ok(source.includes('@media (orientation:portrait) and (max-width:900px)'), 'Portrait mode must use the compact Officer list');
-  assert.ok(source.includes('#savedOfficerProgressTable tbody tr.saved-progress-officer-row td{display:none!important}'), 'Portrait mode must hide overview fields until an Officer is expanded');
+  assert.ok(source.includes('#savedOfficerProgressTable tbody tr.saved-progress-officer-row td{\n    display:none!important;'), 'Portrait mode must hide overview fields until an Officer is expanded');
   assert.ok(source.includes('#savedOfficerProgressTable tbody tr.progress-detail-row>td{display:block!important'), 'Portrait mode must show the detail card when expanded');
 });
 
