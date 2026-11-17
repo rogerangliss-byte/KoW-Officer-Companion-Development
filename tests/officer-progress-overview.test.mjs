@@ -14,12 +14,6 @@ function extractFunction(name) {
 }
 
 function sortRows(rows, mode) {
-  const context = {};
-  vm.runInNewContext(extractFunction('sortSavedOfficerProgressRows') + `\\nresult=sortSavedOfficerProgressRows(input, ${JSON.stringify(mode)});`, {
-    ...context,
-    input: rows,
-    result: null
-  });
   const sandbox = { input: rows, result: null };
   vm.runInNewContext(extractFunction('sortSavedOfficerProgressRows') + `\\nresult=sortSavedOfficerProgressRows(input, ${JSON.stringify(mode)});`, sandbox);
   return sandbox.result;
@@ -62,9 +56,9 @@ test('sorting does not mutate the source progress data', () => {
 });
 
 test('overview includes Officer portrait, season, rarity, role and sort control', () => {
-  assert.match(source, /id="progressSortOrder"/);
-  assert.match(source, /<th>Season<\\/th><th>Rarity<\\/th><th>Role<\\/th>/);
-  assert.match(source, /data-progress-portrait=/);
-  assert.match(source, /rarity:officerRarity\\(o\\),role:officerRole\\(o\\)/);
-  assert.match(source, /setPortraitWithFallback\\(img,null,officerPortraitCandidates/);
+  assert.ok(source.includes('id="progressSortOrder"'));
+  assert.ok(source.includes('<th>Season</th><th>Rarity</th><th>Role</th>'));
+  assert.ok(source.includes('data-progress-portrait='));
+  assert.ok(source.includes('rarity:officerRarity(o),role:officerRole(o)'));
+  assert.ok(source.includes('setPortraitWithFallback(img,null,officerPortraitCandidates'));
 });
