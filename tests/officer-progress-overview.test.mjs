@@ -17,7 +17,7 @@ function sortRows(rows, mode) {
   const sandbox = { input: rows, result: null };
   const call = 'result=sortSavedOfficerProgressRows(input, ' + JSON.stringify(mode) + ');';
   vm.runInNewContext(extractFunction('sortSavedOfficerProgressRows') + String.fromCharCode(10) + call, sandbox);
-  return sandbox.result;
+  return JSON.parse(JSON.stringify(sandbox.result));
 }
 
 const rows = [
