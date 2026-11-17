@@ -119,6 +119,6 @@ test('Officer Progress status filter defaults to showing rows if filter controls
 });
 
 test('overview rendering calls a defined status filter helper', () => {
-  assert.match(source, /function progressStatusAllowed\\(r\\)/);
-  assert.match(source, /allRows\\.filter\\(progressStatusAllowed\\)/);
+  assert.ok(source.includes('function progressStatusAllowed(r)'));
+  assert.ok(source.includes('allRows.filter(progressStatusAllowed)'));
 });
