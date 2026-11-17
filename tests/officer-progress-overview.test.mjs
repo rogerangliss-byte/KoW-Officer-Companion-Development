@@ -210,3 +210,27 @@ test('overview rendering calls a defined status filter helper', () => {
   assert.ok(source.includes('function progressStatusAllowed(r)'));
   assert.ok(source.includes('allRows.filter(progressStatusAllowed)'));
 });
+
+test('Officer Progress summary has four live status cards and an accessible update region', () => {
+  for (const id of ['progressSummaryTotal', 'progressSummaryMaxed', 'progressSummaryInProgress', 'progressSummaryNotStarted']) {
+    assert.ok(source.includes('id="'+id+'"'), id + ' summary counter must exist');
+  }
+  assert.ok(source.includes('class="progress-summary-grid"'));
+  assert.ok(source.includes('aria-live="polite"'));
+});
+
+test('Officer Progress summary counts only rows allowed by the active status filters', () => {
+  const start = source.indexOf('function renderSavedOfficerProgress(){');
+  const end = source.indexOf(String.fromCharCode(10) + '}', start);
+  assert.notEqual(start, -1);
+  assert.notEqual(end, -1);
+  const renderer = source.slice(start, end + 2);
+  assert.ok(renderer.includes('allRows.filter(progressStatusAllowed)'));
+  assert.ok(renderer.includes('total:rows.length'));
+  assert.ok(renderer.includes("maxed:rows.filter(x=>x.maxed).length"));
+  assert.ok(renderer.includes("inProgress:rows.filter(x=>!x.maxed&&!x.notStarted).length"));
+  assert.ok(renderer.includes("notStarted:rows.filter(x=>x.notStarted).length"));
+  for (const id of ['Total', 'Maxed', 'InProgress', 'NotStarted']) {
+    assert.ok(renderer.includes("setCount('progressSummary"+id+"'"));
+  }
+});
