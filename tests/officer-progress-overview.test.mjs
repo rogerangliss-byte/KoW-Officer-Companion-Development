@@ -149,7 +149,7 @@ test('Compare results use the complete Officer Progress overview column set and 
   assert.ok(source.includes('grid-template-columns:repeat(3,minmax(0,1fr))'), 'Tablet layout must retain all overview fields in a three-column Officer list');
   assert.ok(source.includes('grid-template-columns:repeat(2,minmax(0,1fr))'), 'Narrow mobile layout must retain all overview fields in two columns');
   assert.ok(source.includes('content:none;display:none;'), 'Mobile table layout must not convert every field into stacked card labels');
-  assert.ok(source.includes('@media (orientation:portrait) and (max-width:900px)'), 'Portrait mode must retain a dedicated responsive layout');
+  assert.ok(source.includes('@media(max-width:760px){\n  #savedOfficerProgressTable,#compareProgressResultsTable{\n    width:100%;min-width:0;table-layout:fixed;') || source.includes('@media (max-width:760px){\n  #savedOfficerProgressTable,#compareProgressResultsTable{\n    width:100%;min-width:0;table-layout:fixed;'), 'Portrait and landscape must share the same table-style overview without a separate portrait card layout');
   assert.ok(source.includes('display:table-row;width:auto;margin:0;padding:0;'), 'Mobile Officer rows must retain the compact table layout rather than cards');
   assert.ok(!source.includes('#savedOfficerProgressTable tbody tr.saved-progress-officer-row td{\n    display:none!important;'), 'Portrait mode must not hide overview fields behind the expand control');
   assert.ok(source.includes('#savedOfficerProgressTable tbody tr.progress-detail-row>td{\n    display:block!important;'), 'Expanded details must display as a consolidated card below the Officer row');
