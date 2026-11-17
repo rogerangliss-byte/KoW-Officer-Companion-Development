@@ -13,7 +13,7 @@ function extractFilterHandler() {
   return source.slice(start, end + 2);
 }
 
-function runFilterChange(nextSelection) {
+function runFilterChange(nextSelection, dirty = true) {
   const calls = [];
   let loadedIndex = 0;
   const select = { value: '0' };
@@ -24,7 +24,7 @@ function runFilterChange(nextSelection) {
   const context = {
     get loadedOfficerProfileIndex() { return loadedIndex; },
     set loadedOfficerProfileIndex(value) { loadedIndex = value; },
-    officerProfileDirty: true,
+    officerProfileDirty: dirty,
     officers,
     $(id) { return id === 'officerSelect' ? select : null; },
     officerProfileKey(index) { return officers[Number(index)].season + '|' + officers[Number(index)].name; },
@@ -78,9 +78,9 @@ test('filter with no matches clears the active profile without selecting Officer
 
 
 test('filter changes do not recreate a deliberately reset profile when no edits are pending', () => {
-  const result = runFilterChange('1');
-  // runFilterChange starts dirty to exercise the normal pending-save path.
-  assert.ok(result.calls.includes('save:0'));
+  const result = runFilterChange('1', false);
+  assert.equal(result.calls.some(call => call.startsWith('save:')), false);
+  assert.ok(result.calls.includes('load:1'));
 });
 
 test('reset clears the dirty flag and removes the saved profile', () => {
