@@ -150,7 +150,7 @@ test('startup restoration with no matching Officer does not load Officer zero', 
   const end = source.indexOf("\n}\n\n\nconst APP_VERSION", start);
   assert.notEqual(start, -1);
   assert.notEqual(end, -1);
-  vm.runInNewContext(source.slice(start, end + 2) + '\\nloadProgress();', context);
+  vm.runInNewContext(source.slice(start, end + 2) + '\nloadProgress();', context);
   assert.equal(context.loadedOfficerProfileIndex, null);
   assert.equal(calls.some(call => call[0] === 'load'), false);
   assert.ok(calls.some(call => call[0] === 'progress' && call[1] === null));
@@ -176,7 +176,7 @@ test('startup restoration loads the selected Officer profile, not index zero', (
   };
   const start = source.indexOf('function loadProgress(){');
   const end = source.indexOf("\n}\n\n\nconst APP_VERSION", start);
-  vm.runInNewContext(source.slice(start, end + 2) + '\\nloadProgress();', context);
+  vm.runInNewContext(source.slice(start, end + 2) + '\nloadProgress();', context);
   assert.deepEqual(calls.filter(call => call[0] === 'load'), [['load', 1]]);
 });
 
@@ -189,7 +189,7 @@ test('backup persistence saves shared resources when Officer selection is empty'
     saveOfficerProfile: () => calls.push('officer'),
     saveGlobalResources: () => calls.push('global')
   };
-  vm.runInNewContext(extractNamedFunction('persistCurrentStateBeforeBackup', 'function exportFullBackup') + '\\npersistCurrentStateBeforeBackup();', context);
+  vm.runInNewContext(extractNamedFunction('persistCurrentStateBeforeBackup', 'function exportFullBackup') + '\npersistCurrentStateBeforeBackup();', context);
   assert.deepEqual(calls, ['global']);
 });
 
@@ -202,6 +202,6 @@ test('backup persistence saves the selected Officer profile when one is selected
     saveOfficerProfile: () => calls.push('officer'),
     saveGlobalResources: () => calls.push('global')
   };
-  vm.runInNewContext(extractNamedFunction('persistCurrentStateBeforeBackup', 'function exportFullBackup') + '\\npersistCurrentStateBeforeBackup();', context);
+  vm.runInNewContext(extractNamedFunction('persistCurrentStateBeforeBackup', 'function exportFullBackup') + '\npersistCurrentStateBeforeBackup();', context);
   assert.deepEqual(calls, ['officer']);
 });
