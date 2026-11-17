@@ -556,53 +556,52 @@ html.ios-safari{
 .v460-target-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.v460-target-result{margin-top:12px;padding:12px;border:1px solid var(--line);border-radius:12px;background:rgba(0,0,0,.28)}.v460-target-result strong{color:var(--gold2)}@media(max-width:760px){.v460-target-grid{grid-template-columns:1fr}}
 
 
-/* Mobile Officer Progress: render each officer as a readable full-width card.
-   Desktop tables retain their existing 13-column layout. */
+/* Mobile Officer Progress and Compare: keep the default view as a continuous,
+   compact Officer list. The + detail panel remains available for full information. */
 @media(max-width:760px){
   #savedOfficerProgressTable,#compareProgressResultsTable{
     width:100%!important;min-width:0!important;table-layout:fixed;
-    border-collapse:separate;border-spacing:0 10px;
+    border-collapse:collapse;border-spacing:0;
   }
   #savedOfficerProgressTable thead,#compareProgressResultsTable thead{display:none}
   #savedOfficerProgressTable tbody,#compareProgressResultsTable tbody{display:block;width:100%}
   #savedOfficerProgressTable tbody tr.saved-progress-officer-row,
   #compareProgressResultsTable tbody tr{
-    display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);
-    width:100%;margin:0 0 12px;padding:8px 10px;
-    border:1px solid rgba(213,167,47,.35);border-radius:12px;
-    background:rgba(0,0,0,.30);
+    display:block;width:100%;margin:0;padding:9px 2px;
+    border:0;border-bottom:1px solid rgba(213,167,47,.30);
+    border-radius:0;background:transparent;
   }
   #savedOfficerProgressTable tbody tr.saved-progress-officer-row td,
-  #compareProgressResultsTable tbody tr td{
-    display:flex;align-items:center;justify-content:space-between;gap:8px;
-    min-width:0;padding:8px 4px;text-align:right;
-    border-bottom:1px solid rgba(255,255,255,.07);
-    overflow-wrap:anywhere;font-size:.84rem;
-  }
-  #savedOfficerProgressTable tbody tr.saved-progress-officer-row td::before,
-  #compareProgressResultsTable tbody tr td::before{
-    content:attr(data-label);display:block;flex:0 1 48%;
-    color:var(--muted);font-size:.72rem;font-weight:700;text-align:left;
-  }
+  #compareProgressResultsTable tbody tr td{display:none}
   #savedOfficerProgressTable tbody tr.saved-progress-officer-row td:first-child,
   #compareProgressResultsTable tbody tr td:first-child{
-    grid-column:1/-1;display:block;text-align:left;padding:8px 4px;
+    display:block;width:100%;padding:5px 2px;border:0;text-align:left;
   }
-  #savedOfficerProgressTable tbody tr.saved-progress-officer-row td:first-child::before,
-  #compareProgressResultsTable tbody tr td:first-child::before{display:none}
+  #savedOfficerProgressTable tbody tr.saved-progress-officer-row td[data-label="Overall progress"],
+  #savedOfficerProgressTable tbody tr.saved-progress-officer-row td[data-label="Status"],
+  #compareProgressResultsTable tbody tr td[data-label="Overall progress"],
+  #compareProgressResultsTable tbody tr td[data-label="Status"]{
+    display:flex;align-items:center;justify-content:space-between;gap:10px;
+    width:100%;padding:4px 2px;border:0;text-align:right;font-size:.82rem;
+  }
+  #savedOfficerProgressTable tbody tr.saved-progress-officer-row td[data-label="Overall progress"]::before,
+  #savedOfficerProgressTable tbody tr.saved-progress-officer-row td[data-label="Status"]::before,
+  #compareProgressResultsTable tbody tr td[data-label="Overall progress"]::before,
+  #compareProgressResultsTable tbody tr td[data-label="Status"]::before{
+    content:attr(data-label);color:var(--muted);font-size:.72rem;font-weight:700;text-align:left;
+  }
   #savedOfficerProgressTable .progress-officer-cell,
   #compareProgressResultsTable .progress-officer-cell{min-width:0;gap:8px}
   #savedOfficerProgressTable .progress-officer-toggle{min-height:42px}
   #savedOfficerProgressTable .progress-meter,
-  #compareProgressResultsTable .progress-meter{width:84px;min-width:0;flex:0 1 84px}
-  #savedOfficerProgressTable .progress-detail-row{display:block;width:100%;margin-top:-10px}
+  #compareProgressResultsTable .progress-meter{width:112px;min-width:0;flex:0 1 112px}
+  #savedOfficerProgressTable .progress-detail-row{display:block;width:100%;margin:0;padding:0;border:0}
   #savedOfficerProgressTable .progress-detail-row>td{display:block;width:100%;padding:0!important}
   #savedOfficerProgressTable tbody tr:not(.saved-progress-officer-row):not(.progress-detail-row),
   #compareProgressResultsTable tbody tr:not(:has(td[data-label])){display:block;width:100%}
   #savedOfficerProgressTable tbody tr:not(.saved-progress-officer-row):not(.progress-detail-row) td,
   #compareProgressResultsTable tbody tr:not(:has(td[data-label])) td{display:block;text-align:left}
-}
-</style>
+}</style>
 <script>
 (function(){
   var ua=navigator.userAgent||'';
