@@ -298,3 +298,15 @@ test('Expandable Officer details have responsive layout and visible portrait tog
   assert.ok(source.includes('@media(max-width:760px){.progress-detail-stats'));
   assert.ok(source.includes('style="display:block"'));
 });
+
+
+test('Expandable Officer details show free Skill 1 without treating it as 10% progress in each tree', () => {
+  const detail = source.slice(source.indexOf('function savedOfficerProgressDetailMarkup'), source.indexOf('function renderSavedOfficerProgress'));
+  assert.ok(detail.includes("level===1?' · Free starting level':''"));
+  assert.ok(!detail.includes('meter((level/10)*100)'));
+  assert.ok(detail.includes('Shared skill upgrades'));
+  assert.ok(detail.includes('paidSkillUpgrades/36*100'));
+  const data = source.slice(source.indexOf('function savedOfficerProgressData'), source.indexOf('function sortSavedOfficerProgressRows'));
+  assert.ok(data.includes('const paidSkillUpgrades=Math.min(36,skillFlags.filter(Boolean).length);'));
+  assert.ok(data.includes('skillLevels,paidSkillUpgrades,training'));
+});
