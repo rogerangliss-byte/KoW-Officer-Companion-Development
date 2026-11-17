@@ -38,6 +38,7 @@ function runFilterChange(nextSelection) {
     updateSkillRarityNotice() { calls.push('update-skill-rarity'); },
     updateSkillCostSummaries() { calls.push('update-skill-costs'); },
     currentOfficer() { return select.value === '' ? null : officers[Number(select.value)]; },
+    applyOfficerProgress(value) { calls.push(value === null ? 'clear-officer-progress' : 'apply-officer-progress'); },
     updateProfileStatus(value) { calls.push(value === null ? 'clear-profile-status' : 'profile-status'); },
     saveSelectedOfficerState() { calls.push('save-selected-officer'); },
     calculate() { calls.push('calculate'); },
