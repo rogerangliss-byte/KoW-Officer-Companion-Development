@@ -3120,7 +3120,7 @@ function sortSavedOfficerProgressRows(rows,mode='recommended'){
  });
 }
 function sortProgressRowsByHeader(rows,key,direction='asc'){
- const seasonRank=s=>{const m=String(s||'').trim().match(/^s(\\d+)$/i);return m?Number(m[1]):0;};
+ const seasonRank=s=>{const m=String(s||'').trim().match(/^s(\d+)$/i);return m?Number(m[1]):0;};
  const rarityRank=r=>({Legendary:0,Epic:1,Elite:2})[r]??3;
  const statusRank=r=>r.maxed?0:(r.notStarted?2:1);
  const release=(a,b)=>(Number(a.releaseOrder)||0)-(Number(b.releaseOrder)||0)||String(a.name).localeCompare(String(b.name));
