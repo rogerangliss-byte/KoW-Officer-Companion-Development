@@ -9,8 +9,6 @@ on:
       - 'tests/officer-progress-overview.test.mjs'
       - 'tests/upgrade-targets-orv-remainder.test.mjs'
       - 'v460-features.js'
-      - 'tests/upgrade-targets-orv-remainder.test.mjs'
-      - 'v460-features.js'
       - '.github/workflows/officer-filter-regression.yml'
   pull_request:
     paths:
