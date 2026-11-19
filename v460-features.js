@@ -119,6 +119,13 @@
     }
   }
 
+  function additionalOrvForBadgeShortfall(badgeShort,orvPerBadge,orvHeld){
+    const rate=Math.max(1,Number(orvPerBadge)||1);
+    const held=Math.max(0,Number(orvHeld)||0);
+    const remainder=held%rate;
+    return Math.max(0,Math.max(0,Number(badgeShort)||0)*rate-remainder);
+  }
+
   function targetResourceBreakdown(o,cl,cs,ct,tl,ts,tt,isMax){
     const rarity=officerRarity(o);
     const readiness=o.readinessEligible!==false&&String(o.season||'').toLowerCase()!=='original';
@@ -152,6 +159,7 @@
     else if(rarity==='Epic') badgeAvailable+=val('universalEpicBadgeHeld');
     else badgeAvailable+=val('universalEliteBadgeHeld');
 
+    let orvHeldForBadgeCost=0;
     if(rarity==='Legendary'){
       const chestMode=byId('legendaryBadgeChestMode')?.value||'badge';
       const badgeChests=val('legendaryBadgeChestHeld');
@@ -161,6 +169,7 @@
       }
       let orvHeld=val('orvHeld');
       if(chestMode==='orv')orvHeld+=badgeChests*(typeof latestLegendaryOrvChestRate==='function'?latestLegendaryOrvChestRate():720);
+      orvHeldForBadgeCost=orvHeld;
       if(readiness&&Number(o.orv)>0)badgeAvailable+=Math.floor(orvHeld/Number(o.orv));
     }
 
@@ -171,7 +180,7 @@
 
     if(rarity==='Legendary'&&readiness&&Number(o.orv)>0){
       html+='<b>ORV cost per Officer Badge:</b> '+fmt(o.orv)+'<br>'+
-        '<b>Additional ORV equivalent for badge shortfall:</b> '+fmt(badgeShort*Number(o.orv))+'<br>';
+        '<b>Additional ORV equivalent for badge shortfall:</b> '+fmt(additionalOrvForBadgeShortfall(badgeShort,Number(o.orv),orvHeldForBadgeCost))+'<br>';
     }
 
     html+='<b>'+rarity+' Star points:</b> '+fmt(starNeed)+' required · '+fmt(starHeld)+' available · <b>'+fmt(starShort)+' shortfall</b><br>';
