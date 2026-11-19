@@ -22,18 +22,21 @@ function extractFunction(name) {
 const officers = [
   { name: 'S6 Red Queen', season: 'S6' },
   { name: 'S6 White Queen', season: 'S6' },
-  { name: 'S7 Liora', season: 'S7' }
+  { name: 'S7 Liora', season: 'S7' },
+  { name: 'S6 Red Queen', season: 'S6' }
 ];
+const identity = new Function(extractFunction('multiOfficerIdentity') + '; return multiOfficerIdentity;')();
 const normalize = new Function(
   'officers',
   'maxBadgesForOfficer',
+  'multiOfficerIdentity',
   extractFunction('normalizeMultiPlanRows') + '; return normalizeMultiPlanRows;'
-)(officers, () => 1600);
+)(officers, () => 1600, identity);
 
-test('restored plans discard duplicate Officer rows and preserve the first row', () => {
+test('restored plans discard duplicate Officer rows by name and season, even at different indices', () => {
   const rows = normalize([
     { officerIndex: 0, badgesNeeded: 1600 },
-    { officerIndex: 0, badgesNeeded: 800 },
+    { officerIndex: 3, badgesNeeded: 800 },
     { officerIndex: 2, badgesNeeded: 500 }
   ]);
   assert.deepEqual(rows, [
@@ -50,20 +53,21 @@ test('normalization retains distinct Officers in their original order', () => {
   assert.deepEqual(rows.map(row => row.officerIndex), [2, 1]);
 });
 
-test('planner dropdown disables Officers already selected in another row', () => {
+test('planner dropdown disables duplicate Officer identities across different database indices', () => {
   const start = html.indexOf('function multiOfficerOptions');
   const end = html.indexOf('function renderMultiPlanner', start);
   const optionsFunction = html.slice(start, end);
-  assert.match(optionsFunction, /filter\(\(r,pos\)=>pos!==rowPosition\)/);
-  assert.match(optionsFunction, /used\.has\(i\)\?'disabled':''/);
+  assert.match(optionsFunction, /multiOfficerIdentity\(officers\[Number\(r\.officerIndex\)\]\)/);
+  assert.match(optionsFunction, /used\.has\(multiOfficerIdentity\(o\)\)/);
+  assert.match(optionsFunction, /duplicate\?'disabled':''/);
 });
 
-test('adding a row selects the first unused Officer instead of repeating the first', () => {
-  assert.match(html, /const used=new Set\(multiPlanOfficers\.map\(r=>Number\(r\.officerIndex\)\)\),nextIndex=officers\.findIndex\(\(o,i\)=>!used\.has\(i\)\)/);
+test('adding a row selects the first unused Officer identity', () => {
+  assert.match(html, /multiPlanOfficers\.map\(r=>multiOfficerIdentity\(officers\[Number\(r\.officerIndex\)\]\)\)/);
   assert.match(html, /Every Officer is already in the plan/);
 });
 
-test('changing a row to an Officer already present is rejected', () => {
+test('changing a row to an Officer already present is rejected by identity', () => {
   assert.match(html, /This Officer is already in the plan\. Each Officer can only be added once\./);
-  assert.match(html, /pos!==i&&Number\(r\.officerIndex\)===nextIndex/);
+  assert.match(html, /multiOfficerIdentity\(officers\[Number\(r\.officerIndex\)\]\)===nextIdentity/);
 });
